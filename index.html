@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1F3A5F">
-<title>Pendientes de los ancianos</title>
+<title>JWCore</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -233,12 +233,12 @@
   nav.inferior {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     background: var(--panel); border-top: 1px solid var(--linea);
-    display: grid; grid-template-columns: repeat(5, 1fr);
+    display: grid; grid-template-columns: repeat(6, 1fr);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   nav.inferior a {
     height: var(--nav-alto); display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-decoration: none; color: var(--gris-suave); font-size: 11px; font-weight: 600; gap: 2px;
+    text-decoration: none; color: var(--gris-suave); font-size: 10px; font-weight: 600; gap: 2px;
   }
   nav.inferior a .ico { font-size: 19px; line-height: 1; }
   nav.inferior a.activo { color: var(--navy); }
@@ -258,6 +258,15 @@
   .tarjeta-form .para { font-size: 12.5px; color: var(--gris); margin-top: 4px; }
   .tarjeta-form.sin-archivo .cod { background: var(--gris-suave); }
   .nota-form { font-size: 12.5px; color: var(--gris); margin-top: 8px; }
+  /* Cargos con menús, historial y nombramientos */
+  .fila-cargo select { width: 100%; padding: 9px 11px; border: 1px solid var(--linea); border-radius: 8px; background: #fff; font-size: 14px; }
+  .fila-sel { display: flex; gap: 6px; margin-top: 4px; }
+  .fila-sel select { flex: 1; min-width: 0; }
+  .auto-lista { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .hist-bloque, .registro { margin: 4px 0 12px; }
+  .hist-tit { display: block; font-size: 12.5px; font-weight: 600; color: var(--gris); margin-bottom: 4px; }
+  .titulo-mes { font-size: 12px; font-weight: 700; color: var(--gris-suave); margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .06em; }
+  select.buscador { margin-top: 8px; }
   body.bloqueada nav.inferior { display: none; }
   .bloqueo { min-height: 70vh; display: flex; flex-direction: column; justify-content: center; }
   .bloqueo .boton { width: 100%; padding: 14px; font-size: 15px; margin-top: 6px; }
@@ -277,6 +286,7 @@
   <a href="#inicio" data-r="inicio"><span class="ico">🏠</span>Inicio</a>
   <a href="#cargos" data-r="cargos"><span class="ico">📋</span>Cargos</a>
   <a href="#necesidades" data-r="necesidades"><span class="ico">🤝</span>Necesidades</a>
+  <a href="#historial" data-r="historial"><span class="ico">🕘</span>Historial</a>
   <a href="#formularios" data-r="formularios"><span class="ico">📄</span>Fuentes</a>
   <a href="#ajustes" data-r="ajustes"><span class="ico">⚙️</span>Ajustes</a>
 </nav>
@@ -405,12 +415,21 @@ function siguienteFecha(t) {
 }
 
 /* Calcula fecha y situación de una tarea */
+const anclaDe = (t) => t.ancla || ((t.dias || 0) > 0 ? 'fin' : 'inicio');
+function baseEvento(t) {
+  const f = DB.fechas;
+  if (t.evento === 'visitaSC') {
+    const ini = f.visitaSC, fin = f.visitaSCFin || f.visitaSC;
+    return anclaDe(t) === 'fin' ? fin : ini;
+  }
+  return f[t.evento];
+}
 function situacion(t) {
   if (t.tipo === 'permanente') return { clase: 'permanente' };
   if (t.tipo === 'evento') return { clase: 'evento', hecha: t.estado === 'hecho' };
   let fecha = null, hecha = false, falta = '';
   if (t.tipo === 'relativa') {
-    const ev = DB.fechas[t.evento];
+    const ev = baseEvento(t);
     if (!ev) { falta = 'Falta la fecha de: ' + EVENTOS[t.evento]; }
     else { fecha = sumarDias(ev, t.dias || 0); hecha = t.hechoPara === ev; }
   } else {
@@ -432,7 +451,7 @@ function describirRepeticion(t) {
     case 'relativa': {
       const n = t.dias || 0;
       const txt = n === 0 ? 'El día de' : Math.abs(n) + (Math.abs(n) === 1 ? ' día ' : ' días ') + (n < 0 ? 'antes de' : 'después de');
-      return txt + ': ' + EVENTOS[t.evento];
+      return txt + ': ' + EVENTOS[t.evento] + (t.evento === 'visitaSC' ? (anclaDe(t) === 'fin' ? ' (desde el final)' : ' (desde el inicio)') : '');
     }
     case 'unica': return 'Una sola vez';
     default: return TIPOS[t.tipo] || '';
@@ -445,6 +464,30 @@ const cargosOrden = () => DB.cargos.filter(c => !c.borrado).sort((a, b) => (a.or
 const cargoPorId = (id) => DB.cargos.find(c => c.id === id) || { id, nombre: id, color: '#555' };
 const pubsActivos = () => DB.publicadores.filter(p => !p.borrado);
 const nombreCorto = (p) => (p.apodo && p.apodo.trim()) || p.nombre;
+
+/* Quién tiene cada cargo: el modo se define aquí; los nombres vienen de los nombramientos */
+const CARGO_CFG = {
+  coord: { modo: 'uno' }, secre: { modo: 'uno' }, servicio: { modo: 'uno' }, grupo: { modo: 'varios' },
+  comite: { modo: 'comite' }, atalaya: { modo: 'uno' }, vym: { modo: 'uno' }, mant: { modo: 'varios' },
+  todos: { modo: 'auto', nomb: 'anciano' }, cuerpo: { modo: 'auto', nomb: 'anciano' },
+  presidente: { modo: 'rota' }, consejero: { modo: 'uno' }, sm: { modo: 'auto', nomb: 'sm' },
+  cuentas: { modo: 'uno' }, apoyo: { modo: 'varios' }
+};
+const modoCargo = (c) => (CARGO_CFG[c.id] || { modo: 'uno' }).modo;
+const pubPorId = (id) => DB.publicadores.find(x => x.id === id && !x.borrado);
+function elegibles() {
+  const orden = { anciano: 0, sm: 1 };
+  return pubsActivos().filter(x => x.nombramiento === 'anciano' || x.nombramiento === 'sm')
+    .sort((a, b) => (orden[a.nombramiento] - orden[b.nombramiento]) || a.nombre.localeCompare(b.nombre, 'es'));
+}
+function personasDeCargo(c) {
+  const cfg = CARGO_CFG[c.id] || { modo: 'uno' };
+  if (cfg.modo === 'auto') return pubsActivos().filter(x => x.nombramiento === cfg.nomb).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  if (cfg.modo === 'comite') return ['coord', 'secre', 'servicio'].flatMap(id => personasDeCargo(cargoPorId(id)));
+  if (cfg.modo === 'rota') return [];
+  return (c.personas || []).map(pubPorId).filter(Boolean);
+}
+const etiquetaPersonas = (c) => personasDeCargo(c).map(nombreCorto).join(', ') || ((modoCargo(c) === 'uno' || modoCargo(c) === 'varios') ? (c.persona || '') : '');
 
 function conteoCargo(id) {
   let urg = 0, pend = 0;
@@ -523,7 +566,7 @@ function vistaInicio() {
   const recordatorios = act.filter(t => t.recordatorio && t.recordatorio.slice(0, 10) <= hoy && situacion(t).clase !== 'hecha');
   const necPend = pubsActivos().filter(p => p.estado === 'pendiente').length;
 
-  let html = cabecera('Pendientes de los ancianos', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', 'VISTA GENERAL');
+  let html = cabecera('JWCore', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', 'VISTA GENERAL');
 
   if (!DB.tareas.length) {
     html += `<div class="panel"><b>Aún no hay datos.</b><p class="ayuda" style="font-size:13.5px;margin-top:6px">Conecta tu hoja de Google en Ajustes para cargar tareas y hermanos, o importa el archivo datos_iniciales.json.</p>
@@ -553,7 +596,7 @@ function botonesCargos() {
   return `<div class="secciones">${cargosOrden().map(c => {
     const n = conteoCargo(c.id);
     return `<a class="boton-seccion" href="#cargo/${c.id}" style="--c:${c.color};text-decoration:none;color:inherit">
-      <div><div class="nombre">${esc(c.nombre)}</div>${c.persona ? `<div class="persona">${esc(c.persona)}</div>` : ''}</div>
+      <div><div class="nombre">${esc(c.nombre)}</div>${etiquetaPersonas(c) ? `<div class="persona">${esc(etiquetaPersonas(c))}</div>` : ''}</div>
       <span class="contador ${n.urg ? 'alerta' : ''}" title="Pendientes">${n.urg || n.pend}</span>
     </a>`;
   }).join('')}</div>`;
@@ -587,7 +630,7 @@ function vistaCargos() {
     const proximas = conFecha.filter(t => clase(t) === 'semana').length;
     return `<details class="acordeon" data-cargo="${c.id}" style="--c:${c.color}" ${cargosAbiertos.has(c.id) ? 'open' : ''}>
       <summary>
-        <div><div class="nombre">${esc(c.nombre)}</div>${c.persona ? `<div class="persona">${esc(c.persona)}</div>` : ''}</div>
+        <div><div class="nombre">${esc(c.nombre)}</div>${etiquetaPersonas(c) ? `<div class="persona">${esc(etiquetaPersonas(c))}</div>` : ''}</div>
         <div class="cuentas">
           ${vencidas ? `<span class="alerta">${vencidas} atrasada${vencidas > 1 ? 's' : ''}</span>` : ''}
           ${proximas ? `<span>${proximas} esta semana</span>` : ''}
@@ -621,7 +664,7 @@ function vistaCargo(id) {
   const eventos = mias.filter(t => t.tipo === 'evento');
   const perm = mias.filter(t => t.tipo === 'permanente');
 
-  let html = cabecera(c.nombre, 'CONGREGACIÓN CHICHICAXTLE', c.color, c.persona ? c.persona.toUpperCase() : 'SIN ASIGNAR');
+  let html = cabecera(c.nombre, 'CONGREGACIÓN CHICHICAXTLE', c.color, (etiquetaPersonas(c) || (modoCargo(c) === 'rota' ? 'SE TURNA CADA SEMANA' : 'SIN ASIGNAR')).toUpperCase());
   html += `<h2 class="titulo-seccion">Con fecha<span class="cuenta">${conFecha.length}</span></h2>` + listaTareas(conFecha, false, 'Sin tareas con fecha.');
   if (sinFecha.length) html += `<h2 class="titulo-seccion">Falta ponerles fecha<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '');
   if (eventos.length) html += `<h2 class="titulo-seccion">Cuando ocurra<span class="cuenta">${eventos.length}</span></h2>` + listaTareas(eventos, false, '');
@@ -664,7 +707,7 @@ function tarjetaPub(p) {
   const tieneApodo = p.apodo && p.apodo.trim();
   return `<div class="pub ${p.estado || ''}" data-pub="${p.id}">
     <div class="pub-cab">
-      <div><div class="pub-nombre">${esc(nombreCorto(p))}</div>${tieneApodo ? `<div class="pub-completo">${esc(p.nombre)}</div>` : ''}</div>
+      <div><div class="pub-nombre">${esc(nombreCorto(p))}${p.nombramiento ? ` <span class="chip">${p.nombramiento === 'anciano' ? 'Anciano' : 'SM'}</span>` : ''}</div>${tieneApodo ? `<div class="pub-completo">${esc(p.nombre)}</div>` : ''}</div>
       <button class="mini" data-editar-pub="${p.id}">Editar</button>
     </div>
     <textarea data-nec="${p.id}" placeholder="Escribe aquí la necesidad...">${esc(p.necesidad || '')}</textarea>
@@ -672,6 +715,7 @@ function tarjetaPub(p) {
       <button class="mini ${p.estado === 'pendiente' ? 'on-pendiente' : ''}" data-est="pendiente" data-id="${p.id}">Por atender</button>
       <button class="mini ${p.estado === 'atendido' ? 'on-atendido' : ''}" data-est="atendido" data-id="${p.id}">Atendido</button>
       ${p.estado === 'atendido' && p.atendido ? `<span class="fecha-atendido">el ${fechaLarga(p.atendido)}</span>` : ''}
+      <button class="mini" data-hist-pub="${p.id}" style="margin-left:auto">Historial${(p.historial || []).length ? ' (' + p.historial.length + ')' : ''}</button>
     </div>
   </div>`;
 }
@@ -729,6 +773,24 @@ function bloqueFuente(t) {
 }
 
 /* ---------- Ajustes ---------- */
+function selectorPersona(c, idx) {
+  const sel = (c.personas || [])[idx] || '', el = elegibles();
+  const grupo = (tit, nomb) => { const l = el.filter(x => x.nombramiento === nomb); return l.length ? `<optgroup label="${tit}">${l.map(x => `<option value="${x.id}" ${x.id === sel ? 'selected' : ''}>${esc(nombreCorto(x))}</option>`).join('')}</optgroup>` : ''; };
+  return `<select data-cargo-sel="${c.id}" data-idx="${idx}"><option value="">Sin asignar</option>${grupo('Ancianos', 'anciano')}${grupo('Siervos ministeriales', 'sm')}</select>`;
+}
+function filaCargoAjustes(c) {
+  const modo = modoCargo(c);
+  if (modo === 'rota') return '';
+  const chips = (l) => `<div class="auto-lista">${l.length ? l.map(x => `<span class="chip">${esc(nombreCorto(x))}</span>`).join('') : '<span class="ayuda">Sin asignar todavía.</span>'}</div>`;
+  let cuerpo = '';
+  if (modo === 'auto') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Se arma sola con el nombramiento de cada hermano, así crece sin tocar nada aquí.</div>';
+  else if (modo === 'comite') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Lo forman 3 hermanos: el Coordinador, el Secretario y el Superintendente de servicio.</div>';
+  else if (modo === 'uno') cuerpo = selectorPersona(c, 0);
+  else cuerpo = (c.personas || []).map((id, i) => `<div class="fila-sel">${selectorPersona(c, i)}<button class="mini" type="button" data-cargo-del="${c.id}" data-idx="${i}">Quitar</button></div>`).join('') +
+    `<button class="mini" type="button" data-cargo-add="${c.id}" style="margin-top:6px">+ Agregar persona</button>`;
+  const antes = (modo === 'uno' || modo === 'varios') && c.persona && !(c.personas || []).length ? `<div class="ayuda">Antes decía: ${esc(c.persona)}</div>` : '';
+  return `<div class="fila-cargo"><span style="font-weight:600;font-size:13.5px">${esc(c.nombre)}</span>${cuerpo}${antes}</div>`;
+}
 function vistaAjustes() {
   let html = cabecera('Ajustes', 'CONGREGACIÓN CHICHICAXTLE', 'var(--dorado)', 'CONFIGURACIÓN');
 
@@ -750,14 +812,18 @@ function vistaAjustes() {
   </div>`;
 
   html += `<h2 class="titulo-seccion">Fechas clave</h2><div class="panel">
-    ${Object.entries(EVENTOS).map(([k, l]) => `<label class="campo"><span>${esc(l)}</span>
+    ${Object.entries(EVENTOS).map(([k, l]) => k === 'visitaSC'
+      ? `<div class="campo"><span>${esc(l)}</span><div class="dos">
+          <label style="display:block"><span class="ayuda">Inicio</span><input type="date" data-fecha="visitaSC" value="${esc(DB.fechas.visitaSC || '')}" style="width:100%;padding:10px 12px;border:1px solid var(--linea);border-radius:8px"></label>
+          <label style="display:block"><span class="ayuda">Final</span><input type="date" data-fecha="visitaSCFin" value="${esc(DB.fechas.visitaSCFin || '')}" style="width:100%;padding:10px 12px;border:1px solid var(--linea);border-radius:8px"></label></div></div>`
+      : `<label class="campo"><span>${esc(l)}</span>
       <input type="date" data-fecha="${k}" value="${esc(DB.fechas[k] || '')}"></label>`).join('')}
     <div class="ayuda">Las tareas que dependen de estas fechas se calculan solas.</div>
   </div>`;
 
   html += `<h2 class="titulo-seccion">Quién tiene cada cargo</h2><div class="panel">
-    ${cargosOrden().map(c => `<label class="fila-cargo"><span style="font-weight:600;font-size:13.5px">${esc(c.nombre)}</span>
-      <input data-persona="${c.id}" value="${esc(c.persona || '')}" placeholder="Sin asignar" style="padding:9px 11px;border:1px solid var(--linea);border-radius:8px"></label>`).join('')}
+    ${cargosOrden().map(filaCargoAjustes).join('')}
+    <div class="ayuda" style="margin-top:8px">Los menús muestran a los hermanos con nombramiento de anciano o siervo ministerial. El nombramiento se cambia en Necesidades, con el botón Editar de cada hermano. La presidencia de Vida y Ministerio se turna cada semana y no se asigna aquí.</div>
   </div>`;
 
   html += `<h2 class="titulo-seccion">Bloqueo con huella o rostro</h2><div class="panel">
@@ -799,7 +865,8 @@ function camposTipo(t) {
     case 'intervalo': return `<label class="campo"><span>Cada cuántos meses (0 = sin repetir)</span><input name="meses" type="number" min="0" max="60" value="${t.meses ?? 12}"></label>
       <label class="campo"><span>Próxima fecha</span><input name="proxima" type="date" value="${esc(t.proxima || '')}"></label>`;
     case 'relativa': return `<div class="dos"><label class="campo"><span>Fecha clave</span><select name="evento">${opt(Object.entries(EVENTOS), t.evento)}</select></label>
-      <label class="campo"><span>Días (negativo = antes)</span><input name="dias" type="number" value="${t.dias || 0}"></label></div>`;
+      <label class="campo"><span>Días (negativo = antes)</span><input name="dias" type="number" value="${t.dias || 0}"></label></div>` +
+      (t.evento === 'visitaSC' ? `<label class="campo"><span>Contar desde</span><select name="ancla">${opt([['inicio', 'Inicio de la visita'], ['fin', 'Final de la visita']], anclaDe(t))}</select></label>` : '');
     case 'unica': return `<label class="campo"><span>Fecha</span><input name="proxima" type="date" value="${esc(t.proxima || '')}"></label>`;
     default: return '';
   }
@@ -814,7 +881,6 @@ function abrirTarea(id, nuevaCargo) {
 function pintarTarea(t) {
   const s = situacion(t);
   const periodica = ['semanal', 'mensual', 'anual', 'intervalo'].includes(t.tipo);
-  const hist = (t.historial || []).slice(-6).reverse();
   abrirHoja(`<h3>${tareaEditando.nueva ? 'Nueva tarea' : 'Tarea'}</h3>
   <form id="formTarea">
     <label class="campo"><span>Tarea</span><input name="titulo" required value="${esc(t.titulo)}"></label>
@@ -839,10 +905,14 @@ function pintarTarea(t) {
       <label class="campo"><span>Formularios (códigos separados por coma)</span><input name="forms" value="${esc((t.forms || []).join(', '))}"></label>
     </details>
     <label class="campo"><span>Notas</span><textarea name="notas" placeholder="Avances, acuerdos, a quién se le pidió...">${esc(t.notas || '')}</textarea></label>
-    ${hist.length ? `<span style="font-size:12.5px;font-weight:600;color:var(--gris)">Historial</span><ul class="historial">${hist.map(h => `<li>${fechaLarga(h.fecha)}${h.nota ? ': ' + esc(h.nota) : ''}</li>`).join('')}</ul>` : ''}
+    ${tareaEditando.nueva ? '' : `<div class="registro"><span class="hist-tit">Registrar lo que se hizo</span>
+      <div class="dos"><label class="campo"><span>Fecha</span><input type="date" name="fechaHecho" value="${hoyISO()}"></label>
+      <label class="campo"><span>Detalle (opcional)</span><input name="notaHecho" placeholder="Qué se hizo"></label></div></div>
+    ${bloqueHistorial('tarea', t, 'tarea')}`}
     <div class="acciones">
       <button class="boton" type="submit">Guardar</button>
       ${!tareaEditando.nueva && t.tipo !== 'permanente' && !s.hecha ? `<button class="boton verde" type="button" id="btnHecho">${t.tipo === 'evento' ? 'Registrar que se atendió' : 'Marcar como hecho'}</button>` : ''}
+      ${!tareaEditando.nueva ? '<button class="boton sec" type="button" id="btnRegistrar">Solo registrar</button>' : ''}
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
       ${!tareaEditando.nueva ? '<button class="boton peligro" type="button" id="btnBorrar">Eliminar</button>' : ''}
     </div>
@@ -867,6 +937,7 @@ function leerFormTarea(form) {
   if (f.has('meses')) t.meses = Number(f.get('meses')) || 0;
   if (f.has('evento')) t.evento = f.get('evento');
   if (f.has('dias')) t.dias = Number(f.get('dias')) || 0;
+  if (f.has('ancla')) t.ancla = f.get('ancla'); else if (t.tipo === 'relativa') delete t.ancla;
   if (f.has('proxima')) t.proxima = f.get('proxima') || null;
   const cambioRepeticion = antes.tipo !== t.tipo || antes.dow !== t.dow || antes.dia !== t.dia || antes.mes !== t.mes;
   if (['semanal', 'mensual', 'anual'].includes(t.tipo) && (cambioRepeticion || !t.proxima)) t.proxima = primeraFecha(t);
@@ -884,9 +955,76 @@ function leerFormTarea(form) {
   }
 }
 
-function completar(t, conToast = true) {
-  t.historial = t.historial || [];
-  t.historial.push({ fecha: hoyISO() });
+function agregarEntrada(reg, fecha, nota) {
+  reg.historial = reg.historial || [];
+  reg.historial.push({ fecha: fecha || hoyISO(), nota: (nota || '').trim() });
+}
+function bloqueHistorial(tipo, reg, ctx) {
+  const h = (reg.historial || []).map((x, i) => ({ x, i })).sort((a, b) => (b.x.fecha || '').localeCompare(a.x.fecha || ''));
+  return `<div class="hist-bloque"><span class="hist-tit">Historial (${h.length})</span>
+    ${h.length ? h.map(({ x, i }) => `<button type="button" class="renglon" data-h="${tipo}|${reg.id}|${i}|${ctx}"><span class="t">${esc(fechaLarga(x.fecha))}${x.nota ? ': ' + esc(x.nota) : ''}</span><span class="f">Editar</span></button>`).join('') : '<div class="ayuda">Todavía no hay registros.</div>'}
+    <button type="button" class="mini" data-h="${tipo}|${reg.id}|-1|${ctx}" style="margin-top:6px">+ Agregar registro</button></div>`;
+}
+const regPorTipo = (tipo, id) => tipo === 'tarea' ? DB.tareas.find(x => x.id === id) : DB.publicadores.find(x => x.id === id);
+let entradaEd = null;
+function abrirEntrada(tipo, id, idx, ctx) {
+  const reg = regPorTipo(tipo, id); if (!reg) return;
+  const nueva = idx < 0, e = nueva ? { fecha: hoyISO(), nota: '' } : (reg.historial || [])[idx];
+  if (!e) return;
+  entradaEd = { tipo, id, idx, ctx };
+  abrirHoja(`<h3>${nueva ? 'Agregar registro' : 'Editar registro'}</h3>
+    <div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(tipo === 'tarea' ? reg.titulo : nombreCorto(reg))}</div>
+    <form id="formEntrada">
+      <label class="campo"><span>Fecha</span><input type="date" name="fecha" required value="${esc(e.fecha || '')}"></label>
+      <label class="campo"><span>Detalle</span><textarea name="nota" placeholder="Qué se hizo, con quién, resultado...">${esc(e.nota || '')}</textarea></label>
+      <div class="acciones">
+        <button class="boton" type="submit">Guardar</button>
+        <button class="boton sec" type="button" id="btnEntradaVolver">Cancelar</button>
+        ${nueva ? '' : '<button class="boton peligro" type="button" id="btnEntradaBorrar">Eliminar registro</button>'}
+      </div></form>`);
+}
+function cerrarEntrada() {
+  const ed = entradaEd; entradaEd = null;
+  if (ed && ed.ctx === 'tarea') { const t = regPorTipo('tarea', ed.id); tareaEditando = { t, nueva: false }; pintarTarea(t); }
+  else if (ed && ed.ctx === 'pub') abrirHistPub(ed.id);
+  else cerrarHoja();
+  render();
+}
+function abrirHistPub(id) {
+  const p = DB.publicadores.find(x => x.id === id); if (!p) return;
+  abrirHoja(`<h3>Historial de necesidades</h3><div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(nombreCorto(p))}</div>
+    ${bloqueHistorial('pub', p, 'pub')}
+    <div class="acciones"><button class="boton sec" type="button" id="btnCerrar">Cerrar</button></div>`);
+}
+let filtroHist = { q: '', cargo: '' };
+function todasEntradas() {
+  const out = [];
+  tareasActivas().forEach(t => (t.historial || []).forEach((h, i) => out.push({ tipo: 'tarea', id: t.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: t.titulo, cargo: t.cargo })));
+  pubsActivos().forEach(x => (x.historial || []).forEach((h, i) => out.push({ tipo: 'pub', id: x.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: 'Necesidad: ' + nombreCorto(x), cargo: 'necesidades' })));
+  return out.sort((a, b) => b.fecha.localeCompare(a.fecha));
+}
+function vistaHistorial() {
+  const q = normal(filtroHist.q);
+  const todas = todasEntradas().filter(e => (!filtroHist.cargo || e.cargo === filtroHist.cargo) && (!q || normal(e.titulo + ' ' + e.nota).includes(q)));
+  const lista = todas.slice(0, 150);
+  let html = cabecera('Historial', 'CONGREGACIÓN CHICHICAXTLE', 'var(--morado)', todas.length + (todas.length === 1 ? ' REGISTRO' : ' REGISTROS'));
+  html += `<input class="buscador" type="search" id="buscarHist" placeholder="Buscar en el historial" value="${esc(filtroHist.q)}">
+    <select class="buscador" id="filtroHistCargo"><option value="">Todos los cargos</option>${cargosOrden().map(c => `<option value="${c.id}" ${filtroHist.cargo === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}<option value="necesidades" ${filtroHist.cargo === 'necesidades' ? 'selected' : ''}>Necesidades de los publicadores</option></select>`;
+  if (!lista.length) html += '<div class="vacio" style="margin-top:12px">Todavía no hay registros. Aparecen cuando marcas algo como hecho o cuando atiendes una necesidad.</div>';
+  let mes = '';
+  lista.forEach(e => {
+    const m = (e.fecha || '').slice(0, 7);
+    if (m !== mes) { mes = m; html += `<div class="titulo-mes">${m ? MESES[Number(m.slice(5)) - 1] + ' de ' + m.slice(0, 4) : 'Sin fecha'}</div>`; }
+    const c = e.cargo === 'necesidades' ? null : cargoPorId(e.cargo);
+    html += `<button class="tarea" data-h="${e.tipo}|${e.id}|${e.idx}|lista" style="margin-bottom:8px"><div class="t">${esc(e.titulo)}</div>
+      <div class="meta"><span class="chip verde">${esc(fechaLarga(e.fecha))}</span>${c ? `<span class="chip cargo" style="--c:${c.color}">${esc(c.nombre)}</span>` : ''}${e.nota ? `<span class="chip">${esc(e.nota.length > 70 ? e.nota.slice(0, 70) + '...' : e.nota)}</span>` : ''}</div></button>`;
+  });
+  if (todas.length > lista.length) html += `<p class="ayuda" style="margin-top:8px">Se muestran los ${lista.length} más recientes. Usa el buscador para ver los demás.</p>`;
+  vista.innerHTML = html;
+}
+
+function completar(t, conToast = true, fecha, nota) {
+  agregarEntrada(t, fecha, nota);
   if (['semanal', 'mensual', 'anual'].includes(t.tipo) || (t.tipo === 'intervalo' && t.meses > 0)) {
     t.proxima = siguienteFecha(t);
     t.estado = 'pendiente';
@@ -896,7 +1034,7 @@ function completar(t, conToast = true) {
     t.estado = 'pendiente';
     if (conToast) toast('Registrado en el historial');
   } else if (t.tipo === 'relativa') {
-    t.hechoPara = DB.fechas[t.evento] || null;
+    t.hechoPara = baseEvento(t) || null;
     t.estado = 'pendiente';
     if (conToast) toast('Marcada como hecha');
   } else {
@@ -906,6 +1044,11 @@ function completar(t, conToast = true) {
 }
 
 hoja.addEventListener('change', (e) => {
+  if (e.target.name === 'evento' && tareaEditando && $('#formTarea')) {
+    const fd = new FormData($('#formTarea'));
+    const t = Object.assign({}, tareaEditando.t, { tipo: 'relativa', evento: e.target.value, dias: Number(fd.get('dias')) || 0, ancla: fd.get('ancla') || undefined });
+    $('#camposTipo').innerHTML = camposTipo(t);
+  }
   if (e.target.id === 'selTipo' && tareaEditando) {
     const t = Object.assign({}, tareaEditando.t, { tipo: e.target.value });
     $('#camposTipo').innerHTML = camposTipo(t);
@@ -921,6 +1064,14 @@ hoja.addEventListener('submit', (e) => {
     cerrarHoja(); render(); toast('Guardado');
   }
   if (e.target.id === 'formPub') guardarPubForm(e.target);
+  if (e.target.id === 'formEntrada' && entradaEd) {
+    const reg = regPorTipo(entradaEd.tipo, entradaEd.id), fd = new FormData(e.target);
+    const dato = { fecha: fd.get('fecha'), nota: (fd.get('nota') || '').trim() };
+    reg.historial = reg.historial || [];
+    if (entradaEd.idx < 0) reg.historial.push(dato); else reg.historial[entradaEd.idx] = dato;
+    marcarCambio(entradaEd.tipo === 'tarea' ? 'tareas' : 'publicadores', reg);
+    toast('Guardado'); cerrarEntrada();
+  }
 });
 hoja.addEventListener('click', (e) => {
   const id = e.target.id;
@@ -929,10 +1080,28 @@ hoja.addEventListener('click', (e) => {
   const tb = e.target.closest('[data-abrir-tarea]');
   if (tb) return abrirTarea(tb.dataset.abrirTarea);
   if (id === 'btnCerrar') cerrarHoja();
+  if (id === 'btnRegistrar' && tareaEditando) {
+    const fd = new FormData($('#formTarea'));
+    leerFormTarea($('#formTarea'));
+    agregarEntrada(tareaEditando.t, fd.get('fechaHecho'), fd.get('notaHecho'));
+    marcarCambio('tareas', tareaEditando.t);
+    pintarTarea(tareaEditando.t); render(); toast('Registrado en el historial');
+    return;
+  }
+  const hb = e.target.closest('[data-h]');
+  if (hb) { const [tipo, rid, idx, ctx] = hb.dataset.h.split('|'); return abrirEntrada(tipo, rid, Number(idx), ctx); }
+  if (id === 'btnEntradaVolver') return cerrarEntrada();
+  if (id === 'btnEntradaBorrar' && entradaEd && confirm('¿Eliminar este registro del historial?')) {
+    const reg = regPorTipo(entradaEd.tipo, entradaEd.id);
+    reg.historial.splice(entradaEd.idx, 1);
+    marcarCambio(entradaEd.tipo === 'tarea' ? 'tareas' : 'publicadores', reg);
+    toast('Registro eliminado'); return cerrarEntrada();
+  }
   if (id === 'btnHecho' && tareaEditando) {
+    const fd = new FormData($('#formTarea')), fechaH = fd.get('fechaHecho') || hoyISO(), notaH = (fd.get('notaHecho') || '').trim();
     const previos = (tareaEditando.t.historial || []).length;
     leerFormTarea($('#formTarea'));
-    if ((tareaEditando.t.historial || []).length === previos) completar(tareaEditando.t);
+    if ((tareaEditando.t.historial || []).length === previos) completar(tareaEditando.t, true, fechaH, notaH);
     marcarCambio('tareas', tareaEditando.t);
     cerrarHoja(); render();
   }
@@ -952,13 +1121,18 @@ hoja.addEventListener('click', (e) => {
 let pubEditando = null;
 function abrirPub(id, grupoNuevo) {
   const p = id ? DB.publicadores.find(x => x.id === id)
-    : { id: 'p' + Date.now().toString(36), grupo: Number(grupoNuevo), nombre: '', apodo: '', necesidad: '', estado: '', atendido: '' };
+    : { id: 'p' + Date.now().toString(36), grupo: Number(grupoNuevo), nombre: '', apodo: '', nombramiento: '', necesidad: '', estado: '', atendido: '' };
   pubEditando = { p, nuevo: !id };
   abrirHoja(`<h3>${pubEditando.nuevo ? 'Agregar hermano' : 'Editar hermano'}</h3>
   <form id="formPub">
     <label class="campo"><span>Nombre completo</span><input name="nombre" required value="${esc(p.nombre)}"></label>
     <label class="campo"><span>Apodo o nombre corto</span><input name="apodo" value="${esc(p.apodo || '')}" placeholder="Opcional">
       <div class="ayuda">Si lo pones, se muestra en lugar del nombre completo.</div></label>
+    <label class="campo"><span>Nombramiento</span><select name="nombramiento">
+      <option value="" ${!p.nombramiento ? 'selected' : ''}>Publicador</option>
+      <option value="anciano" ${p.nombramiento === 'anciano' ? 'selected' : ''}>Anciano</option>
+      <option value="sm" ${p.nombramiento === 'sm' ? 'selected' : ''}>Siervo ministerial</option></select>
+      <div class="ayuda">Define quién aparece en los menús de cargos, en Todos los ancianos y en Siervos ministeriales.</div></label>
     <label class="campo"><span>Grupo</span><select name="grupo">${[1, 2, 3, 4].map(n => `<option value="${n}" ${n === p.grupo ? 'selected' : ''}>Grupo ${n}</option>`).join('')}</select></label>
     <div class="acciones">
       <button class="boton" type="submit">Guardar</button>
@@ -972,6 +1146,7 @@ function guardarPubForm(form) {
   p.nombre = f.get('nombre').trim();
   p.apodo = f.get('apodo').trim();
   p.grupo = Number(f.get('grupo'));
+  p.nombramiento = f.get('nombramiento') || '';
   if (!p.nombre) return;
   if (pubEditando.nuevo) DB.publicadores.push(p);
   marcarCambio('publicadores', p);
@@ -980,8 +1155,12 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-h],[data-hist-pub],[data-cargo-add],[data-cargo-del],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
+  if (b.dataset.h) { const [tipo, rid, idx, ctx] = b.dataset.h.split('|'); return abrirEntrada(tipo, rid, Number(idx), ctx); }
+  if (b.dataset.histPub) return abrirHistPub(b.dataset.histPub);
+  if (b.dataset.cargoAdd) { const c = DB.cargos.find(x => x.id === b.dataset.cargoAdd); c.personas = (c.personas || []).concat(['']); marcarCambio('cargos', c); return render(); }
+  if (b.dataset.cargoDel) { const c = DB.cargos.find(x => x.id === b.dataset.cargoDel); (c.personas || []).splice(Number(b.dataset.idx), 1); marcarCambio('cargos', c); return render(); }
   if (b.dataset.form) return abrirForm(b.dataset.form);
   if (b.dataset.tarea) return abrirTarea(b.dataset.tarea);
   if (b.dataset.nueva) return abrirTarea(null, b.dataset.nueva);
@@ -991,8 +1170,16 @@ vista.addEventListener('click', (e) => {
   if (b.dataset.nuevoPub) return abrirPub(null, b.dataset.nuevoPub);
   if (b.dataset.est) {
     const p = DB.publicadores.find(x => x.id === b.dataset.id);
-    p.estado = p.estado === b.dataset.est ? '' : b.dataset.est;
-    p.atendido = p.estado === 'atendido' ? hoyISO() : '';
+    const nuevo = p.estado === b.dataset.est ? '' : b.dataset.est;
+    if (nuevo === 'atendido') {
+      p.atendido = hoyISO();
+      agregarEntrada(p, p.atendido, p.necesidad ? 'Atendido: ' + p.necesidad : 'Atendido');
+    } else if (p.estado === 'atendido') {
+      const h = p.historial || [], k = h.map(x => x.fecha === p.atendido && (x.nota || '').startsWith('Atendido')).lastIndexOf(true);
+      if (k >= 0) h.splice(k, 1);
+      p.atendido = '';
+    }
+    p.estado = nuevo;
     marcarCambio('publicadores', p);
     return render();
   }
@@ -1027,6 +1214,13 @@ vista.addEventListener('input', (e) => {
     const nuevo = $('#buscarNec'); nuevo.focus(); nuevo.setSelectionRange(pos, pos);
     return;
   }
+  if (e.target.id === 'buscarHist') {
+    filtroHist.q = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const nuevo = $('#buscarHist'); nuevo.focus(); nuevo.setSelectionRange(pos, pos);
+    return;
+  }
   if (e.target.id === 'buscarForm') {
     filtroForm = e.target.value;
     const pos = e.target.selectionStart;
@@ -1052,9 +1246,22 @@ vista.addEventListener('input', (e) => {
 });
 vista.addEventListener('change', (e) => {
   const k = e.target.dataset.fecha;
-  if (k) { DB.fechas[k] = e.target.value || null; marcarCambio('fechas', DB.fechas); toast('Fecha guardada'); }
-  const cid = e.target.dataset.persona;
-  if (cid) { const c = DB.cargos.find(x => x.id === cid); c.persona = e.target.value.trim(); marcarCambio('cargos', c); toast('Guardado'); }
+  if (k) {
+    const v = e.target.value || null, fe = DB.fechas;
+    if (k === 'visitaSCFin' && v && fe.visitaSC && v < fe.visitaSC) { toast('La fecha final no puede ser antes del inicio'); e.target.value = fe.visitaSCFin || ''; return; }
+    if (k === 'visitaSC' && v && fe.visitaSCFin && fe.visitaSCFin < v) fe.visitaSCFin = v;
+    fe[k] = v; marcarCambio('fechas', fe); toast('Fecha guardada');
+    if (k === 'visitaSC') render();
+  }
+  const sc = e.target.dataset.cargoSel;
+  if (sc) {
+    const c = DB.cargos.find(x => x.id === sc), i = Number(e.target.dataset.idx), v = e.target.value;
+    c.personas = c.personas || [];
+    if (modoCargo(c) === 'uno') c.personas = v ? [v] : [];
+    else if (v) c.personas[i] = v; else c.personas.splice(i, 1);
+    marcarCambio('cargos', c); render(); toast('Guardado');
+  }
+  if (e.target.id === 'filtroHistCargo') { filtroHist.cargo = e.target.value; render(); }
   if (e.target.id === 'archivo' && e.target.files[0]) importar(e.target.files[0]);
 });
 
@@ -1248,8 +1455,8 @@ async function activarBiometria() {
   try {
     const cred = await navigator.credentials.create({ publicKey: {
       challenge: retoAleatorio(),
-      rp: { name: 'Pendientes de los ancianos' },
-      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'ancianos', displayName: 'Pendientes de los ancianos' },
+      rp: { name: 'JWCore' },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'ancianos', displayName: 'JWCore' },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
       timeout: 60000
@@ -1288,7 +1495,7 @@ function bloquear() {
 
 function vistaBloqueo() {
   vista.innerHTML = `<div class="bloqueo">
-    ${cabecera('Pendientes de los ancianos', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', 'APP BLOQUEADA')}
+    ${cabecera('JWCore', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', 'APP BLOQUEADA')}
     <button class="boton" id="btnDesbloquear">Desbloquear con huella o rostro</button>
     <p>Si tu celular lo permite, también puedes usar su PIN o patrón.</p>
   </div>`;
@@ -1305,6 +1512,7 @@ function render() {
   if (ruta === 'cargos') vistaCargos();
   else if (ruta === 'cargo' && param) vistaCargo(param);
   else if (ruta === 'necesidades') vistaNecesidades(param);
+  else if (ruta === 'historial') vistaHistorial();
   else if (ruta === 'formularios') vistaFormularios();
   else if (ruta === 'ajustes') vistaAjustes();
   else vistaInicio();
