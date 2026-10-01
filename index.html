@@ -259,6 +259,25 @@
   .tarjeta-form.sin-archivo .cod { background: var(--gris-suave); }
   .nota-form { font-size: 12.5px; color: var(--gris); margin-top: 8px; }
   /* Cargos con menús, historial y nombramientos */
+  .visita-sc { background: #EEF3FA; border-left: 4px solid var(--navy); border-radius: 8px; padding: 12px 12px 10px; margin: 0 0 14px; }
+  .visita-tit { font-weight: 700; font-size: 14px; color: var(--navy); margin-bottom: 2px; }
+  .visita-sub { font-size: 12px; color: var(--gris); margin-bottom: 10px; }
+  .visita-et { display: block; font-size: 12.5px; font-weight: 700; color: var(--tinta); margin: 10px 0 4px; }
+  .visita-et .ico { margin-right: 4px; }
+  .visita-res { margin-top: 10px; padding: 8px 10px; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--navy); }
+  .subpuesto { font-size: 12.5px; font-weight: 700; color: var(--navy); margin: 12px 0 4px; }
+  .aux-bloque { margin-top: 10px; padding: 8px 10px; background: var(--caja); border-radius: 8px; }
+  .aux-tit { font-size: 11.5px; font-weight: 700; color: var(--gris); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .aux-fila { margin-bottom: 8px; }
+  .aux-nota { width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--linea); border-radius: 8px; background: #fff; font-size: 13px; }
+  .fila-sel.con-num > select:first-child { flex: 1 1 0; font-size: 13.5px; padding-left: 8px; }
+  .fila-sel.con-num select.num-grupo { flex: 0 0 66px; }
+  .fila-sel.con-num .mini { flex: 0 0 40px; padding: 5px 0; }
+  .resp { background: var(--panel); border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; font-size: 13.5px; }
+  .resp-fila + .resp-fila { margin-top: 6px; }
+  .resp-aux { font-size: 12.5px; color: var(--gris); }
+  details.ocultas { margin-top: 14px; }
+  details.ocultas > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gris); padding: 8px 0; }
   .selfecha { display: flex; gap: 6px; flex-wrap: wrap; }
   .selfecha select { flex: 1 1 0; min-width: 0; padding: 10px 6px; border: 1px solid var(--linea); border-radius: 8px; background: #fff; font-size: 14px; }
   .selfecha select[data-sf="d"], .selfecha select[data-sf="h"], .selfecha select[data-sf="mi"] { flex: .7 1 0; }
@@ -494,25 +513,34 @@ function describirRepeticion(t) {
 }
 
 /* ================= Consultas ================= */
-const tareasActivas = () => DB.tareas.filter(t => !t.borrado);
+const tareasTodas = () => DB.tareas.filter(t => !t.borrado);
+const tareasActivas = () => tareasTodas().filter(t => !t.oculta);
 const cargosOrden = () => DB.cargos.filter(c => !c.borrado).sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99));
 const cargoPorId = (id) => DB.cargos.find(c => c.id === id) || { id, nombre: id, color: '#555' };
 const pubsActivos = () => DB.publicadores.filter(p => !p.borrado);
 const nombreCorto = (p) => (p.apodo && p.apodo.trim()) || p.nombre;
 
-/* Quién tiene cada cargo. El modo se define aquí; los nombres salen de los hermanos registrados. */
+/* Quién tiene cada cargo. Cada cargo tiene uno o más puestos; cada puesto es de una persona o de varias,
+   y puede llevar auxiliares con una nota de qué se encargan. Los nombres salen de los hermanos registrados. */
+const PUESTO_UNO = [{ id: 'p', modo: 'uno', aux: true }];
 const CARGO_CFG = {
-  coord: { modo: 'uno' }, secre: { modo: 'uno' }, servicio: { modo: 'uno' }, grupo: { modo: 'varios' },
-  comite: { modo: 'comite' }, atalaya: { modo: 'uno' }, vym: { modo: 'uno' }, mant: { modo: 'varios' },
-  todos: { modo: 'varios', porDefecto: 'anciano' }, cuerpo: { modo: 'igual', de: 'todos' },
-  presidente: { modo: 'rota' }, consejero: { modo: 'uno' }, sm: { modo: 'varios', porDefecto: 'sm' },
-  cuentas: { modo: 'uno' }, apoyo: { modo: 'varios' }
+  coord: { puestos: PUESTO_UNO }, secre: { puestos: PUESTO_UNO }, servicio: { puestos: PUESTO_UNO },
+  grupo: { puestos: [{ id: 'p', modo: 'varios', num: true, aux: true }] },
+  comite: { especial: 'comite' },
+  atalaya: { puestos: PUESTO_UNO }, vym: { puestos: PUESTO_UNO }, consejero: { puestos: PUESTO_UNO }, cuentas: { puestos: PUESTO_UNO },
+  mant: { puestos: [
+    { id: 'limpieza', rotulo: 'Coordinador de limpieza', modo: 'uno', aux: true },
+    { id: 'coordMant', rotulo: 'Coordinador del comité de mantenimiento', modo: 'uno', aux: true },
+    { id: 'comMant', rotulo: 'Integrantes del comité de mantenimiento', modo: 'varios' }] },
+  apoyo: { puestos: [{ id: 'p', modo: 'varios', aux: true }] },
+  todos: { puestos: [{ id: 'p', modo: 'varios', porDefecto: 'anciano' }] }, cuerpo: { especial: 'igual', de: 'todos' },
+  sm: { puestos: [{ id: 'p', modo: 'varios', porDefecto: 'sm' }] }, presidente: { especial: 'rota' }
 };
-const modoCargo = (c) => (CARGO_CFG[c.id] || { modo: 'uno' }).modo;
+const cfgCargo = (c) => CARGO_CFG[c.id] || { puestos: PUESTO_UNO };
 const pubPorId = (id) => DB.publicadores.find(x => x.id === id && !x.borrado);
 const porNombre = (a, b) => a.nombre.localeCompare(b.nombre, 'es');
 const esVaron = (x) => x.varon === true || x.nombramiento === 'anciano' || x.nombramiento === 'sm';
-/* Menú de los cargos: ancianos, siervos ministeriales y los demás varones. Si todavía no se ha indicado quién es varón, muestra a todos. */
+/* Menú: ancianos, siervos ministeriales y los demás varones. Si todavía no se ha indicado quién es varón, muestra a todos. */
 function opcionesMenu() {
   const act = pubsActivos(), varones = act.filter(esVaron);
   if (!varones.length) return [['Hermanos (indica quién es varón en Necesidades, Editar)', act.slice().sort(porNombre)]];
@@ -520,20 +548,51 @@ function opcionesMenu() {
   return [['Ancianos', g(x => x.nombramiento === 'anciano')], ['Siervos ministeriales', g(x => x.nombramiento === 'sm')],
     ['Otros hermanos', g(x => x.nombramiento !== 'anciano' && x.nombramiento !== 'sm')]].filter(([, l]) => l.length);
 }
-/* Lista de ids de un cargo; mientras nadie la edite, Todos los ancianos y Siervos ministeriales parten de su nombramiento */
-function idsDeCargo(c) {
-  if (c.personas !== undefined) return c.personas.filter(Boolean);
-  const nomb = (CARGO_CFG[c.id] || {}).porDefecto;
-  return nomb ? pubsActivos().filter(x => x.nombramiento === nomb).sort(porNombre).map(x => x.id) : [];
+function idsPuesto(c, pc) {
+  const g = c.puestos && c.puestos[pc.id];
+  if (g && g.personas !== undefined) return g.personas.filter(Boolean);
+  if (pc.id === 'p' && c.personas !== undefined) return c.personas.filter(Boolean);
+  return pc.porDefecto ? pubsActivos().filter(x => x.nombramiento === pc.porDefecto).sort(porNombre).map(x => x.id) : [];
+}
+const numsPuesto = (c, pid) => (c.puestos && c.puestos[pid] && c.puestos[pid].nums) || {};
+const auxPuesto = (c, pid) => (c.puestos && c.puestos[pid] && c.puestos[pid].aux) || [];
+function editarPuesto(c, pc, fn) {
+  c.puestos = c.puestos || {};
+  const g = c.puestos[pc.id] = c.puestos[pc.id] || {};
+  if (g.personas === undefined) g.personas = idsPuesto(c, pc).slice();
+  g.nums = g.nums || {}; g.aux = g.aux || [];
+  fn(g);
+  g.personas = g.personas.filter(Boolean);
+  Object.keys(g.nums).forEach(k => { if (!g.personas.includes(k)) delete g.nums[k]; });
+  marcarCambio('cargos', c);
 }
 function personasDeCargo(c) {
-  const cfg = CARGO_CFG[c.id] || { modo: 'uno' };
-  if (cfg.modo === 'igual') return personasDeCargo(cargoPorId(cfg.de));
-  if (cfg.modo === 'comite') return ['coord', 'secre', 'servicio'].flatMap(id => personasDeCargo(cargoPorId(id)));
-  if (cfg.modo === 'rota') return [];
-  return idsDeCargo(c).map(pubPorId).filter(Boolean);
+  const cfg = cfgCargo(c);
+  if (cfg.especial === 'igual') return personasDeCargo(cargoPorId(cfg.de));
+  if (cfg.especial === 'comite') return ['coord', 'secre', 'servicio'].flatMap(id => personasDeCargo(cargoPorId(id)));
+  if (cfg.especial === 'rota') return [];
+  return cfg.puestos.flatMap(pc => idsPuesto(c, pc)).map(pubPorId).filter(Boolean);
 }
-const etiquetaPersonas = (c) => personasDeCargo(c).map(nombreCorto).join(', ') || ((modoCargo(c) === 'uno' || modoCargo(c) === 'varios') ? (c.persona || '') : '');
+function etiquetaPersonas(c) {
+  const cfg = cfgCargo(c);
+  if (cfg.puestos && cfg.puestos.length === 1 && cfg.puestos[0].num) {
+    const pc = cfg.puestos[0], nums = numsPuesto(c, pc.id);
+    return idsPuesto(c, pc).map(pubPorId).filter(Boolean).map(x => nombreCorto(x) + (nums[x.id] ? ' (grupo ' + nums[x.id] + ')' : '')).join(', ');
+  }
+  return personasDeCargo(c).map(nombreCorto).join(', ') || (c.persona || '');
+}
+function bloqueResponsables(c) {
+  const cfg = cfgCargo(c);
+  if (!cfg.puestos) return '';
+  const filas = cfg.puestos.map(pc => {
+    const nums = numsPuesto(c, pc.id);
+    const nom = idsPuesto(c, pc).map(pubPorId).filter(Boolean).map(x => nombreCorto(x) + (nums[x.id] ? ' (grupo ' + nums[x.id] + ')' : '')).join(', ');
+    const ax = auxPuesto(c, pc.id).map(a => { const x = pubPorId(a.id); return x ? nombreCorto(x) + (a.nota ? ' (' + a.nota + ')' : '') : ''; }).filter(Boolean).join(', ');
+    if (!nom && !ax) return '';
+    return `<div class="resp-fila">${cfg.puestos.length > 1 ? `<b>${esc(pc.rotulo)}:</b> ` : ''}${esc(nom || 'Sin asignar')}${ax ? `<div class="resp-aux">Auxiliares: ${esc(ax)}</div>` : ''}</div>`;
+  }).join('');
+  return filas ? `<div class="resp">${filas}</div>` : '';
+}
 
 function conteoCargo(id) {
   let urg = 0, pend = 0;
@@ -579,7 +638,7 @@ function tarjetaTarea(t, mostrarCargo) {
   else if (s.clase === 'mes' || s.clase === 'futura') chipFecha = `<span class="chip">${fechaLarga(s.fecha)}</span>`;
   else if (s.clase === 'hecha') chipFecha = `<span class="chip verde">Hecho</span>`;
   else if (s.clase === 'sinfecha') chipFecha = `<span class="chip">${esc(s.falta || 'Sin fecha asignada')}</span>`;
-  const proceso = t.estado === 'proceso' && s.clase !== 'hecha' ? '<span class="chip ambar">En proceso</span>' : '';
+  const proceso = t.estado === 'proceso' && s.clase !== 'hecha' ? '<span class="chip ambar">En proceso</span>' : (t.oculta ? '<span class="chip">Oculta</span>' : '');
   const nota = t.notas ? '<span class="chip">📝 Nota</span>' : '';
   const rec = t.recordatorio && s.clase !== 'hecha' ? `<span class="chip">🔔 ${esc(t.recordatorio.replace('T', ' '))}</span>` : '';
   return `<button class="tarea ${clase}" data-tarea="${t.id}">
@@ -659,6 +718,7 @@ function renglonTarea(t) {
   else if (s.clase === 'mes' || s.clase === 'futura') f = fechaLarga(s.fecha);
   else if (s.clase === 'hecha') { f = 'Hecho'; cls = 'verde'; }
   else if (s.clase === 'sinfecha') f = 'Sin fecha';
+  if (t.oculta) { f = 'Oculta'; cls = ''; }
   return `<button class="renglon" data-tarea="${t.id}"><span class="t">${esc(t.titulo)}</span>${f ? `<span class="f ${cls}">${esc(f)}</span>` : ''}</button>`;
 }
 
@@ -689,6 +749,7 @@ function vistaCargos() {
         ${bloqueLista('Cuando ocurra', mias.filter(t => t.tipo === 'evento'))}
         ${bloqueLista('Responsabilidades permanentes', mias.filter(t => t.tipo === 'permanente'))}
         ${bloqueLista('Hechas', mias.filter(t => clase(t) === 'hecha'))}
+        ${bloqueLista('Ocultas', tareasTodas().filter(t => t.cargo === c.id && t.oculta))}
         <a class="abrir-seccion" href="#cargo/${c.id}">Abrir sección</a>
       </div>
     </details>`;
@@ -710,13 +771,16 @@ function vistaCargo(id) {
   const eventos = mias.filter(t => t.tipo === 'evento');
   const perm = mias.filter(t => t.tipo === 'permanente');
 
-  let html = cabecera(c.nombre, 'CONGREGACIÓN CHICHICAXTLE', c.color, (etiquetaPersonas(c) || (modoCargo(c) === 'rota' ? 'SE TURNA CADA SEMANA' : 'SIN ASIGNAR')).toUpperCase());
+  let html = cabecera(c.nombre, 'CONGREGACIÓN CHICHICAXTLE', c.color, (etiquetaPersonas(c) || (cfgCargo(c).especial === 'rota' ? 'SE TURNA CADA SEMANA' : 'SIN ASIGNAR')).toUpperCase());
+  html += bloqueResponsables(c);
   html += `<h2 class="titulo-seccion">Con fecha<span class="cuenta">${conFecha.length}</span></h2>` + listaTareas(conFecha, false, 'Sin tareas con fecha.');
   if (sinFecha.length) html += `<h2 class="titulo-seccion">Falta ponerles fecha<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '');
   if (eventos.length) html += `<h2 class="titulo-seccion">Cuando ocurra<span class="cuenta">${eventos.length}</span></h2>` + listaTareas(eventos, false, '');
   if (perm.length) html += `<h2 class="titulo-seccion">Responsabilidades permanentes</h2>` +
     perm.map(t => `<button class="permanente tarea" data-tarea="${t.id}" style="border-left-color:${c.color}">${esc(t.titulo)}<span class="chip ref">${esc(t.ref)}</span></button>`).join('');
   if (hechas.length) html += `<h2 class="titulo-seccion">Hechas<span class="cuenta">${hechas.length}</span></h2>` + listaTareas(hechas, false, '');
+  const ocultas = tareasTodas().filter(t => t.cargo === id && t.oculta);
+  if (ocultas.length) html += `<details class="ocultas"><summary>Ocultas (${ocultas.length})</summary>${listaTareas(ocultas, false, '')}</details>`;
   html += `<button class="boton-agregar" data-nueva="${id}">+ Agregar tarea</button>`;
   vista.innerHTML = html;
 }
@@ -770,7 +834,7 @@ function tarjetaPub(p) {
 /* ---------- Fuentes: formularios y libros ---------- */
 let filtroForm = '';
 function usosDe(codigo) {
-  return tareasActivas().filter(t =>
+  return tareasTodas().filter(t =>
     (t.forms || []).includes(codigo) ||
     String(t.ref || '').split(';').some(x => x.trim().startsWith(codigo + ' ')));
 }
@@ -819,29 +883,59 @@ function bloqueFuente(t) {
 }
 
 /* ---------- Ajustes ---------- */
-function selectorPersona(c, idx, elegido, excluir) {
+function menuPersonas(attr, elegido, excluir, rotuloVacio, clase) {
   const grupos = opcionesMenu().map(([tit, l]) => {
     const op = l.filter(x => x.id === elegido || !excluir.includes(x.id));
     return op.length ? `<optgroup label="${esc(tit)}">${op.map(x => `<option value="${x.id}" ${x.id === elegido ? 'selected' : ''}>${esc(nombreCorto(x))}</option>`).join('')}</optgroup>` : '';
   }).join('');
-  const rotulo = elegido ? 'Quitar de la lista' : (modoCargo(c) === 'uno' ? 'Sin asignar' : 'Agregar a la lista...');
-  return `<select data-cargo-sel="${c.id}" data-idx="${idx}"><option value="">${rotulo}</option>${grupos}</select>`;
+  return `<select ${attr} ${clase ? `class="${clase}"` : ''}><option value="">${rotuloVacio}</option>${grupos}</select>`;
+}
+function menuNumeroGrupo(c, pc, id, valor) {
+  return `<select class="num-grupo" data-pn="${c.id}|${pc.id}|${id}" aria-label="Número de grupo"><option value="">Gpo.</option>${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}" ${String(valor) === String(i + 1) ? 'selected' : ''}>${i + 1}</option>`).join('')}</select>`;
+}
+function bloqueAux(c, pc) {
+  const aux = auxPuesto(c, pc.id), usados = aux.map(a => a.id);
+  return `<div class="aux-bloque"><div class="aux-tit">Auxiliares</div>
+    ${aux.map((a, i) => `<div class="aux-fila"><div class="fila-sel">${menuPersonas(`data-ax="${c.id}|${pc.id}|${i}"`, a.id, usados, 'Quitar')}<button class="mini" type="button" data-adel="${c.id}|${pc.id}|${i}">Quitar</button></div>
+      <input class="aux-nota" data-an="${c.id}|${pc.id}|${i}" value="${esc(a.nota || '')}" placeholder="Tipo de auxiliar o de qué se encarga"></div>`).join('')}
+    <div class="fila-sel">${menuPersonas(`data-ax="${c.id}|${pc.id}|${aux.length}"`, '', usados, 'Agregar auxiliar...')}</div></div>`;
+}
+function bloquePuesto(c, pc, conTitulo) {
+  const ids = idsPuesto(c, pc), nums = numsPuesto(c, pc.id);
+  let h = conTitulo ? `<div class="subpuesto">${esc(pc.rotulo)}</div>` : '';
+  if (pc.modo === 'uno') h += menuPersonas(`data-ps="${c.id}|${pc.id}|0"`, ids[0] || '', [], 'Sin asignar');
+  else h += ids.map((id, i) => `<div class="fila-sel ${pc.num ? 'con-num' : ''}">${menuPersonas(`data-ps="${c.id}|${pc.id}|${i}"`, id, ids, 'Quitar de la lista')}${pc.num ? menuNumeroGrupo(c, pc, id, nums[id]) : ''}<button class="mini" type="button" data-pdel="${c.id}|${pc.id}|${i}" aria-label="Quitar">${pc.num ? '✕' : 'Quitar'}</button></div>`).join('') +
+    `<div class="fila-sel">${menuPersonas(`data-ps="${c.id}|${pc.id}|${ids.length}"`, '', ids, 'Agregar a la lista...')}</div>`;
+  return h + (pc.aux ? bloqueAux(c, pc) : '');
 }
 function filaCargoAjustes(c) {
-  const modo = modoCargo(c);
-  if (modo === 'rota') return '';
+  const cfg = cfgCargo(c);
+  if (cfg.especial === 'rota') return '';
   const chips = (l) => `<div class="auto-lista">${l.length ? l.map(x => `<span class="chip">${esc(nombreCorto(x))}</span>`).join('') : '<span class="ayuda">Sin asignar todavía.</span>'}</div>`;
   let cuerpo = '';
-  if (modo === 'igual') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Es la misma lista de Todos los ancianos.</div>';
-  else if (modo === 'comite') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Lo forman 3 hermanos: el Coordinador, el Secretario y el Superintendente de servicio.</div>';
-  else if (modo === 'uno') cuerpo = selectorPersona(c, 0, idsDeCargo(c)[0] || '', []);
-  else {
-    const ids = idsDeCargo(c);
-    cuerpo = ids.map((id, i) => `<div class="fila-sel">${selectorPersona(c, i, id, ids)}<button class="mini" type="button" data-cargo-del="${c.id}" data-idx="${i}">Quitar</button></div>`).join('') +
-      `<div class="fila-sel">${selectorPersona(c, ids.length, '', ids)}</div>`;
-  }
-  const antes = (modo === 'uno' || modo === 'varios') && c.persona && !idsDeCargo(c).length ? `<div class="ayuda">Antes decía: ${esc(c.persona)}</div>` : '';
+  if (cfg.especial === 'igual') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Es la misma lista de Todos los ancianos.</div>';
+  else if (cfg.especial === 'comite') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Lo forman 3 hermanos: el Coordinador, el Secretario y el Superintendente de servicio.</div>';
+  else cuerpo = cfg.puestos.map(pc => bloquePuesto(c, pc, cfg.puestos.length > 1)).join('');
+  const antes = cfg.puestos && c.persona && !personasDeCargo(c).length ? `<div class="ayuda">Antes decía: ${esc(c.persona)}</div>` : '';
   return `<div class="fila-cargo"><span style="font-weight:600;font-size:13.5px">${esc(c.nombre)}</span>${cuerpo}${antes}</div>`;
+}
+function resumenVisita() {
+  const ini = DB.fechas.visitaSC, fin = DB.fechas.visitaSCFin;
+  const completa = (f) => { const d = deISO(f); return d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear(); };
+  const rango = () => {
+    const a = deISO(ini), z = deISO(fin);
+    if (a.getFullYear() === z.getFullYear() && a.getMonth() === z.getMonth()) return a.getDate() + ' al ' + completa(fin);
+    if (a.getFullYear() === z.getFullYear()) return a.getDate() + ' de ' + MESES[a.getMonth()] + ' al ' + completa(fin);
+    return completa(ini) + ' al ' + completa(fin);
+  };
+  const texto = ini && fin ? (ini === fin ? 'La visita es el ' + completa(ini) + '.' : 'La visita es del ' + rango() + '.')
+    : ini ? 'La visita empieza el ' + completa(ini) + '. Falta la fecha en que termina.'
+    : 'Pon el día en que empieza la visita y el día en que termina.';
+  return `<div class="visita-sc"><div class="visita-tit">Visita del superintendente de circuito</div>
+    <div class="visita-sub">Las tareas de antes cuentan desde el inicio de la visita y las de después, desde su final.</div>
+    <span class="visita-et"><span class="ico">▶</span>Inicio de la visita</span>${selectorFecha('f_visitaSC', DB.fechas.visitaSC, 'visitaSC')}
+    <span class="visita-et"><span class="ico">■</span>Final de la visita</span>${selectorFecha('f_visitaSCFin', DB.fechas.visitaSCFin, 'visitaSCFin')}
+    <div class="visita-res">${esc(texto)}</div></div>`;
 }
 function vistaAjustes() {
   let html = cabecera('Ajustes', 'CONGREGACIÓN CHICHICAXTLE', 'var(--dorado)', 'CONFIGURACIÓN');
@@ -864,17 +958,14 @@ function vistaAjustes() {
   </div>`;
 
   html += `<h2 class="titulo-seccion">Fechas clave</h2><div class="panel">
-    ${Object.entries(EVENTOS).map(([k, l]) => k === 'visitaSC'
-      ? `<div class="campo"><span>${esc(l)}</span>
-          <span class="ayuda">Inicio</span>${selectorFecha('f_visitaSC', DB.fechas.visitaSC, 'visitaSC')}
-          <span class="ayuda" style="display:block;margin-top:8px">Final</span>${selectorFecha('f_visitaSCFin', DB.fechas.visitaSCFin, 'visitaSCFin')}</div>`
-      : `<div class="campo"><span>${esc(l)}</span>${selectorFecha('f_' + k, DB.fechas[k], k)}</div>`).join('')}
+    ${resumenVisita()}
+    ${Object.entries(EVENTOS).filter(([k]) => k !== 'visitaSC').map(([k, l]) => `<div class="campo"><span>${esc(l)}</span>${selectorFecha('f_' + k, DB.fechas[k], k)}</div>`).join('')}
     <div class="ayuda">Las tareas que dependen de estas fechas se calculan solas.</div>
   </div>`;
 
   html += `<h2 class="titulo-seccion">Quién tiene cada cargo</h2><div class="panel">
     ${cargosOrden().map(filaCargoAjustes).join('')}
-    <div class="ayuda" style="margin-top:8px">En los menús aparecen todos los hermanos varones, con los ancianos y siervos ministeriales primero. En las listas, al elegir un nombre se abre otro menú para seguir agregando, y con Quitar lo sacas. Si alguien no aparece, en Necesidades, Editar, indica que es hermano. La presidencia de Vida y Ministerio se turna cada semana y no se asigna aquí.</div>
+    <div class="ayuda" style="margin-top:8px">En los menús aparecen todos los hermanos varones, con los ancianos y siervos ministeriales primero. En las listas, al elegir un nombre se abre otro menú para seguir agregando, y con Quitar lo sacas. Cada puesto puede llevar auxiliares, con una nota de qué se encargan. Si alguien no aparece, en Necesidades, Editar, indica que es hermano. La presidencia de Vida y Ministerio se turna cada semana y no se asigna aquí.</div>
   </div>`;
 
   html += `<h2 class="titulo-seccion">Bloqueo con huella o rostro</h2><div class="panel">
@@ -964,6 +1055,7 @@ function pintarTarea(t) {
       <button class="boton" type="submit">Guardar</button>
       ${!tareaEditando.nueva && t.tipo !== 'permanente' && !s.hecha ? `<button class="boton verde" type="button" id="btnHecho">${t.tipo === 'evento' ? 'Registrar que se atendió' : 'Marcar como hecho'}</button>` : ''}
       ${!tareaEditando.nueva ? '<button class="boton sec" type="button" id="btnRegistrar">Solo registrar</button>' : ''}
+      ${!tareaEditando.nueva ? `<button class="boton sec" type="button" id="btnOcultar">${t.oculta ? 'Volver a mostrar' : 'Ocultar de los pendientes'}</button>` : ''}
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
       ${!tareaEditando.nueva ? '<button class="boton peligro" type="button" id="btnBorrar">Eliminar</button>' : ''}
     </div>
@@ -1050,7 +1142,7 @@ function abrirHistPub(id) {
 let filtroHist = { q: '', cargo: '' };
 function todasEntradas() {
   const out = [];
-  tareasActivas().forEach(t => (t.historial || []).forEach((h, i) => out.push({ tipo: 'tarea', id: t.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: t.titulo, cargo: t.cargo })));
+  tareasTodas().forEach(t => (t.historial || []).forEach((h, i) => out.push({ tipo: 'tarea', id: t.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: t.titulo, cargo: t.cargo })));
   pubsActivos().forEach(x => (x.historial || []).forEach((h, i) => out.push({ tipo: 'pub', id: x.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: 'Necesidad: ' + nombreCorto(x), cargo: 'necesidades' })));
   return out.sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
@@ -1132,6 +1224,14 @@ hoja.addEventListener('click', (e) => {
   const tb = e.target.closest('[data-abrir-tarea]');
   if (tb) return abrirTarea(tb.dataset.abrirTarea);
   if (id === 'btnCerrar') cerrarHoja();
+  if (id === 'btnOcultar' && tareaEditando) {
+    const t = tareaEditando.t;
+    leerFormTarea($('#formTarea'));
+    t.oculta = !t.oculta;
+    marcarCambio('tareas', t);
+    cerrarHoja(); render();
+    return toast(t.oculta ? 'Oculta. La encuentras en Ocultas, al final del cargo.' : 'Vuelve a mostrarse en los pendientes');
+  }
   if (id === 'btnRegistrar' && tareaEditando) {
     const fd = new FormData($('#formTarea'));
     leerFormTarea($('#formTarea'));
@@ -1214,11 +1314,15 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-h],[data-hist-pub],[data-cargo-del],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-h],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
   if (b.dataset.h) { const [tipo, rid, idx, ctx] = b.dataset.h.split('|'); return abrirEntrada(tipo, rid, Number(idx), ctx); }
   if (b.dataset.histPub) return abrirHistPub(b.dataset.histPub);
-  if (b.dataset.cargoDel) { const c = DB.cargos.find(x => x.id === b.dataset.cargoDel), l = idsDeCargo(c).slice(); l.splice(Number(b.dataset.idx), 1); c.personas = l; marcarCambio('cargos', c); return render(); }
+  if (b.dataset.pdel || b.dataset.adel) {
+    const [cid, pid, x] = (b.dataset.pdel || b.dataset.adel).split('|'), c = DB.cargos.find(y => y.id === cid), pc = cfgCargo(c).puestos.find(y => y.id === pid);
+    editarPuesto(c, pc, g => (b.dataset.pdel ? g.personas : g.aux).splice(Number(x), 1));
+    return render();
+  }
   if (b.dataset.form) return abrirForm(b.dataset.form);
   if (b.dataset.tarea) return abrirTarea(b.dataset.tarea);
   if (b.dataset.nueva) return abrirTarea(null, b.dataset.nueva);
@@ -1309,18 +1413,28 @@ vista.addEventListener('change', (e) => {
     if (k === 'visitaSCFin' && v && fe.visitaSC && v < fe.visitaSC) { toast('La fecha final no puede ser antes del inicio'); render(); return; }
     if (k === 'visitaSC' && v && fe.visitaSCFin && fe.visitaSCFin < v) fe.visitaSCFin = v;
     fe[k] = v; marcarCambio('fechas', fe); toast('Fecha guardada');
-    if (k === 'visitaSC') render();
+    if (k === 'visitaSC' || k === 'visitaSCFin') render();
   }
-  const sc = e.target.dataset.cargoSel;
-  if (sc) {
-    const c = DB.cargos.find(x => x.id === sc), i = Number(e.target.dataset.idx), v = e.target.value;
-    const lista = idsDeCargo(c).slice();
-    if (modoCargo(c) === 'uno') c.personas = v ? [v] : [];
-    else {
-      if (v) lista[i] = v; else lista.splice(i, 1);
-      c.personas = lista.filter(Boolean);
-    }
-    marcarCambio('cargos', c); render(); toast('Guardado');
+  const dpuesto = (txt) => { const [cid, pid, x] = txt.split('|'), c = DB.cargos.find(y => y.id === cid); return { c, pc: cfgCargo(c).puestos.find(y => y.id === pid), x }; };
+  if (e.target.dataset.ps) {
+    const { c, pc, x } = dpuesto(e.target.dataset.ps), i = Number(x), v = e.target.value;
+    editarPuesto(c, pc, g => { if (pc.modo === 'uno') g.personas = v ? [v] : []; else if (v) g.personas[i] = v; else g.personas.splice(i, 1); });
+    render(); toast('Guardado');
+  }
+  if (e.target.dataset.pn) {
+    const { c, pc, x } = dpuesto(e.target.dataset.pn), v = e.target.value;
+    editarPuesto(c, pc, g => { if (v) g.nums[x] = v; else delete g.nums[x]; });
+    toast('Guardado');
+  }
+  if (e.target.dataset.ax) {
+    const { c, pc, x } = dpuesto(e.target.dataset.ax), i = Number(x), v = e.target.value;
+    editarPuesto(c, pc, g => { if (!v) g.aux.splice(i, 1); else if (g.aux[i]) g.aux[i].id = v; else g.aux.push({ id: v, nota: '' }); });
+    render(); toast('Guardado');
+  }
+  if (e.target.dataset.an) {
+    const { c, pc, x } = dpuesto(e.target.dataset.an), i = Number(x), v = e.target.value.trim();
+    editarPuesto(c, pc, g => { if (g.aux[i]) g.aux[i].nota = v; });
+    toast('Guardado');
   }
   if (e.target.id === 'filtroHistCargo') { filtroHist.cargo = e.target.value; render(); }
   if (e.target.id === 'archivo' && e.target.files[0]) importar(e.target.files[0]);
