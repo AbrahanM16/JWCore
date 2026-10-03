@@ -278,6 +278,16 @@
   .resp-aux { font-size: 12.5px; color: var(--gris); }
   details.ocultas { margin-top: 14px; }
   details.ocultas > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gris); padding: 8px 0; }
+  .chk-omitidas { display: flex; align-items: center; gap: 8px; margin: 10px 2px 0; font-size: 13px; color: var(--gris); }
+  .segmento { display: flex; margin: 10px 0 4px; border: 1px solid var(--linea); border-radius: 8px; overflow: hidden; background: #fff; }
+  .segmento button { flex: 1; padding: 9px 6px; border: 0; background: transparent; font-size: 13.5px; font-weight: 600; color: var(--gris); }
+  .segmento button.on { background: var(--navy); color: #fff; }
+  details.hist-cargo { margin: 10px 0; }
+  details.hist-cargo > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 11px 12px; background: var(--panel); border: 1px solid var(--linea); border-radius: 8px; font-weight: 600; font-size: 14px; list-style: none; }
+  details.hist-cargo > summary::-webkit-details-marker { display: none; }
+  details.hist-cargo[open] > summary { margin-bottom: 8px; }
+  details.hist-cargo .punto { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  details.hist-cargo .cuenta { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--gris); background: var(--caja); border-radius: 999px; padding: 2px 9px; }
   .selfecha { display: flex; gap: 6px; flex-wrap: wrap; }
   .selfecha select { flex: 1 1 0; min-width: 0; padding: 10px 6px; border: 1px solid var(--linea); border-radius: 8px; background: #fff; font-size: 14px; }
   .selfecha select[data-sf="d"], .selfecha select[data-sf="h"], .selfecha select[data-sf="mi"] { flex: .7 1 0; }
@@ -423,19 +433,36 @@ function primeraFecha(t) {
   }
   return null;
 }
+const esRecurrente = (t) => ['semanal', 'mensual', 'anual'].includes(t.tipo) || (t.tipo === 'intervalo' && t.meses > 0);
+function pasoCiclo(t, x) {
+  if (t.tipo === 'semanal') return sumarDias(x, 7);
+  if (t.tipo === 'mensual') return sumarMeses(x, 1, t.dia);
+  if (t.tipo === 'anual') return sumarMeses(x, 12, t.dia);
+  return sumarMeses(x, t.meses);
+}
 function siguienteFecha(t) {
+  if (!esRecurrente(t)) return null;
   const hoy = hoyISO();
-  let f = t.proxima || hoy;
-  const paso = (x) => {
-    if (t.tipo === 'semanal') return sumarDias(x, 7);
-    if (t.tipo === 'mensual') return sumarMeses(x, 1, t.dia);
-    if (t.tipo === 'anual') return sumarMeses(x, 12, t.dia);
-    if (t.tipo === 'intervalo' && t.meses > 0) return sumarMeses(x, t.meses);
-    return null;
-  };
-  let n = paso(f);
-  if (!n) return null;
-  while (n <= hoy) n = paso(n);
+  let n = pasoCiclo(t, t.proxima || hoy);
+  while (n <= hoy) n = pasoCiclo(t, n);
+  return n;
+}
+/* Renovación mixta: una tarea con repetición se queda en rojo mientras dura su ciclo y salta sola cuando llega la
+   siguiente ocurrencia, dejando "Omitida" en su historial. Las ocultas no se tocan. */
+function renovarVencidas() {
+  const hoy = hoyISO();
+  let n = 0;
+  tareasActivas().forEach(t => {
+    if (!esRecurrente(t) || !t.proxima) return;
+    let f = t.proxima;
+    const omitidas = [];
+    while (omitidas.length < 500 && pasoCiclo(t, f) <= hoy) { omitidas.push(f); f = pasoCiclo(t, f); }
+    if (!omitidas.length) return;
+    agregarEntrada(t, omitidas[omitidas.length - 1], omitidas.length === 1 ? 'Omitida' : 'Omitida ' + omitidas.length + ' veces, desde el ' + fechaLarga(omitidas[0]));
+    t.historial[t.historial.length - 1].omitida = true;
+    t.proxima = f; t.estado = 'pendiente'; t.recordatorio = '';
+    marcarCambio('tareas', t); n++;
+  });
   return n;
 }
 
@@ -478,8 +505,16 @@ function baseEvento(t) {
   }
   return f[t.evento];
 }
+/* Responsabilidades permanentes con recordatorio de revisión: cada cierto número de meses piden que las revises */
+function revision(t) {
+  if (t.tipo !== 'permanente' || !t.revisarCada) return null;
+  const base = t.ultimaRevision || t.revisarDesde;
+  if (!base) return null;
+  const fecha = sumarMeses(base, t.revisarCada);
+  return { fecha, toca: fecha <= hoyISO() };
+}
 function situacion(t) {
-  if (t.tipo === 'permanente') return { clase: 'permanente' };
+  if (t.tipo === 'permanente') { const r = revision(t); return r ? { clase: 'permanente', revisar: r.toca, proxRev: r.fecha } : { clase: 'permanente' }; }
   if (t.tipo === 'evento') return { clase: 'evento', hecha: t.estado === 'hecho' };
   let fecha = null, hecha = false, falta = '';
   if (t.tipo === 'relativa') {
@@ -631,8 +666,8 @@ function cabecera(titulo, sub, color, pildora, extra = '') {
 function tarjetaTarea(t, mostrarCargo) {
   const s = situacion(t);
   const c = cargoPorId(t.cargo);
-  const clase = s.clase === 'vencida' ? 'vencida' : s.clase === 'semana' ? 'proxima' : s.clase === 'hecha' ? 'hecha' : '';
-  let chipFecha = '';
+  const clase = s.clase === 'vencida' ? 'vencida' : (s.clase === 'semana' || s.revisar) ? 'proxima' : s.clase === 'hecha' ? 'hecha' : '';
+  let chipFecha = s.revisar ? '<span class="chip ambar">Por revisar</span>' : '';
   if (s.clase === 'vencida') chipFecha = `<span class="chip rojo">Venció el ${fechaLarga(s.fecha)}</span>`;
   else if (s.clase === 'semana') chipFecha = `<span class="chip ambar">${s.dias === 0 ? 'Hoy' : s.dias === 1 ? 'Mañana' : fechaLarga(s.fecha)}</span>`;
   else if (s.clase === 'mes' || s.clase === 'futura') chipFecha = `<span class="chip">${fechaLarga(s.fecha)}</span>`;
@@ -668,6 +703,7 @@ function vistaInicio() {
   const semana = act.filter(t => situacion(t).clase === 'semana').sort(ordenarPorFecha);
   const mes = act.filter(t => situacion(t).clase === 'mes').sort(ordenarPorFecha);
   const hoy = hoyISO();
+  const porRevisar = act.filter(t => situacion(t).revisar).sort((a, b) => situacion(a).proxRev.localeCompare(situacion(b).proxRev));
   const recordatorios = act.filter(t => t.recordatorio && t.recordatorio.slice(0, 10) <= hoy && situacion(t).clase !== 'hecha');
   const necPend = pubsActivos().filter(p => p.estado === 'pendiente').length;
 
@@ -689,6 +725,7 @@ function vistaInicio() {
   if (recordatorios.length) html += `<h2 class="titulo-seccion">Recordatorios<span class="cuenta">${recordatorios.length}</span></h2>` + listaTareas(recordatorios, true, '');
   html += `<h2 class="titulo-seccion">Atrasadas<span class="cuenta">${vencidas.length}</span></h2>` + listaTareas(vencidas, true, 'Nada atrasado.');
   html += `<h2 class="titulo-seccion">Próximos 7 días<span class="cuenta">${semana.length}</span></h2>` + listaTareas(semana, true, 'Nada para esta semana.');
+  if (porRevisar.length) html += `<h2 class="titulo-seccion">Por revisar<span class="cuenta">${porRevisar.length}</span></h2>` + listaTareas(porRevisar, true, '');
   html += `<h2 class="titulo-seccion">Por cargo</h2>` + botonesCargos();
 
   const faltan = Object.keys(EVENTOS).filter(k => !DB.fechas[k]);
@@ -718,6 +755,7 @@ function renglonTarea(t) {
   else if (s.clase === 'mes' || s.clase === 'futura') f = fechaLarga(s.fecha);
   else if (s.clase === 'hecha') { f = 'Hecho'; cls = 'verde'; }
   else if (s.clase === 'sinfecha') f = 'Sin fecha';
+  else if (s.revisar) { f = 'Por revisar'; cls = 'ambar'; }
   if (t.oculta) { f = 'Oculta'; cls = ''; }
   return `<button class="renglon" data-tarea="${t.id}"><span class="t">${esc(t.titulo)}</span>${f ? `<span class="f ${cls}">${esc(f)}</span>` : ''}</button>`;
 }
@@ -777,7 +815,7 @@ function vistaCargo(id) {
   if (sinFecha.length) html += `<h2 class="titulo-seccion">Falta ponerles fecha<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '');
   if (eventos.length) html += `<h2 class="titulo-seccion">Cuando ocurra<span class="cuenta">${eventos.length}</span></h2>` + listaTareas(eventos, false, '');
   if (perm.length) html += `<h2 class="titulo-seccion">Responsabilidades permanentes</h2>` +
-    perm.map(t => `<button class="permanente tarea" data-tarea="${t.id}" style="border-left-color:${c.color}">${esc(t.titulo)}<span class="chip ref">${esc(t.ref)}</span></button>`).join('');
+    perm.map(t => `<button class="permanente tarea" data-tarea="${t.id}" style="border-left-color:${c.color}">${esc(t.titulo)}${situacion(t).revisar ? '<span class="chip ambar">Por revisar</span>' : ''}${t.ref ? `<span class="chip ref">${esc(t.ref)}</span>` : ''}</button>`).join('');
   if (hechas.length) html += `<h2 class="titulo-seccion">Hechas<span class="cuenta">${hechas.length}</span></h2>` + listaTareas(hechas, false, '');
   const ocultas = tareasTodas().filter(t => t.cargo === id && t.oculta);
   if (ocultas.length) html += `<details class="ocultas"><summary>Ocultas (${ocultas.length})</summary>${listaTareas(ocultas, false, '')}</details>`;
@@ -1010,6 +1048,11 @@ function camposTipo(t) {
       <label class="campo"><span>Días (negativo = antes)</span><input name="dias" type="number" value="${t.dias || 0}"></label></div>` +
       (t.evento === 'visitaSC' ? `<label class="campo"><span>Contar desde</span><select name="ancla">${opt([['inicio', 'Inicio de la visita'], ['fin', 'Final de la visita']], anclaDe(t))}</select></label>` : '');
     case 'unica': return `<div class="campo"><span>Fecha</span>${selectorFecha('proxima', t.proxima)}</div>`;
+    case 'permanente': {
+      const r = revision(t);
+      return `<label class="campo"><span>Recordarme revisarla</span><select name="revisarCada">${opt([['', 'No recordarme'], [1, 'Cada mes'], [2, 'Cada 2 meses'], [3, 'Cada 3 meses'], [4, 'Cada 4 meses'], [6, 'Cada 6 meses'], [12, 'Cada año'], [24, 'Cada 2 años']], t.revisarCada || '')}</select>
+        <div class="ayuda">${t.revisarCada ? (t.ultimaRevision ? 'Última revisión: ' + fechaLarga(t.ultimaRevision) + '. ' : 'Aún sin revisar. ') + (r ? 'Te la recuerdo el ' + fechaLarga(r.fecha) + '.' : 'Se activa al guardar.') : 'Cuando toque, aparece en el Inicio, en Por revisar.'}</div></label>`;
+    }
     default: return '';
   }
 }
@@ -1054,6 +1097,7 @@ function pintarTarea(t) {
     <div class="acciones">
       <button class="boton" type="submit">Guardar</button>
       ${!tareaEditando.nueva && t.tipo !== 'permanente' && !s.hecha ? `<button class="boton verde" type="button" id="btnHecho">${t.tipo === 'evento' ? 'Registrar que se atendió' : 'Marcar como hecho'}</button>` : ''}
+      ${!tareaEditando.nueva && t.tipo === 'permanente' && t.revisarCada ? '<button class="boton verde" type="button" id="btnRevisado">Ya lo revisé</button>' : ''}
       ${!tareaEditando.nueva ? '<button class="boton sec" type="button" id="btnRegistrar">Solo registrar</button>' : ''}
       ${!tareaEditando.nueva ? `<button class="boton sec" type="button" id="btnOcultar">${t.oculta ? 'Volver a mostrar' : 'Ocultar de los pendientes'}</button>` : ''}
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
@@ -1082,6 +1126,11 @@ function leerFormTarea(form) {
   if (f.has('dias')) t.dias = Number(f.get('dias')) || 0;
   if (f.has('ancla')) t.ancla = f.get('ancla'); else if (t.tipo === 'relativa') delete t.ancla;
   if (f.has('proxima')) t.proxima = f.get('proxima') || null;
+  if (f.has('revisarCada')) {
+    const v = Number(f.get('revisarCada')) || 0;
+    if (!v) delete t.revisarCada;
+    else if (t.revisarCada !== v) { t.revisarCada = v; if (!t.ultimaRevision && !t.revisarDesde) t.revisarDesde = hoyISO(); }
+  } else if (t.tipo !== 'permanente') delete t.revisarCada;
   const cambioRepeticion = antes.tipo !== t.tipo || antes.dow !== t.dow || antes.dia !== t.dia || antes.mes !== t.mes;
   if (['semanal', 'mensual', 'anual'].includes(t.tipo) && (cambioRepeticion || !t.proxima)) t.proxima = primeraFecha(t);
   if (f.has('recordatorio')) {
@@ -1139,32 +1188,54 @@ function abrirHistPub(id) {
     ${bloqueHistorial('pub', p, 'pub')}
     <div class="acciones"><button class="boton sec" type="button" id="btnCerrar">Cerrar</button></div>`);
 }
-let filtroHist = { q: '', cargo: '' };
+let filtroHist = { q: '', cargo: '', vista: 'fecha', abiertos: [], omitidas: false };
 function todasEntradas() {
   const out = [];
-  tareasTodas().forEach(t => (t.historial || []).forEach((h, i) => out.push({ tipo: 'tarea', id: t.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: t.titulo, cargo: t.cargo })));
+  tareasTodas().forEach(t => (t.historial || []).forEach((h, i) => { if (!h.omitida || filtroHist.omitidas) out.push({ tipo: 'tarea', id: t.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: t.titulo, cargo: t.cargo, omitida: !!h.omitida }); }));
   pubsActivos().forEach(x => (x.historial || []).forEach((h, i) => out.push({ tipo: 'pub', id: x.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: 'Necesidad: ' + nombreCorto(x), cargo: 'necesidades' })));
   return out.sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
+function tarjetaEntrada(e, conCargo) {
+  const c = e.cargo === 'necesidades' ? null : cargoPorId(e.cargo);
+  return `<button class="tarea" data-h="${e.tipo}|${e.id}|${e.idx}|lista" style="margin-bottom:8px"><div class="t">${esc(e.titulo)}</div>
+    <div class="meta"><span class="chip ${e.omitida ? 'ambar' : 'verde'}">${esc(fechaLarga(e.fecha))}</span>${conCargo && c ? `<span class="chip cargo" style="--c:${c.color}">${esc(c.nombre)}</span>` : ''}${e.nota ? `<span class="chip">${esc(e.nota.length > 70 ? e.nota.slice(0, 70) + '...' : e.nota)}</span>` : ''}</div></button>`;
+}
 function vistaHistorial() {
-  const q = normal(filtroHist.q);
+  const q = normal(filtroHist.q), porCargo = filtroHist.vista === 'cargo';
   const todas = todasEntradas().filter(e => (!filtroHist.cargo || e.cargo === filtroHist.cargo) && (!q || normal(e.titulo + ' ' + e.nota).includes(q)));
-  const lista = todas.slice(0, 150);
   let html = cabecera('Historial', 'CONGREGACIÓN CHICHICAXTLE', 'var(--morado)', todas.length + (todas.length === 1 ? ' REGISTRO' : ' REGISTROS'));
-  html += `<input class="buscador" type="search" id="buscarHist" placeholder="Buscar en el historial" value="${esc(filtroHist.q)}">
+  html += `<div class="segmento"><button type="button" class="${!porCargo ? 'on' : ''}" data-vista-hist="fecha">Por fecha</button><button type="button" class="${porCargo ? 'on' : ''}" data-vista-hist="cargo">Por cargo</button></div>
+    <input class="buscador" type="search" id="buscarHist" placeholder="Buscar en el historial" value="${esc(filtroHist.q)}">
+    <label class="chk-omitidas"><input type="checkbox" id="chkOmitidas" ${filtroHist.omitidas ? 'checked' : ''}> Incluir las tareas omitidas</label>
     <select class="buscador" id="filtroHistCargo"><option value="">Todos los cargos</option>${cargosOrden().map(c => `<option value="${c.id}" ${filtroHist.cargo === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}<option value="necesidades" ${filtroHist.cargo === 'necesidades' ? 'selected' : ''}>Necesidades de los publicadores</option></select>`;
-  if (!lista.length) html += '<div class="vacio" style="margin-top:12px">Todavía no hay registros. Aparecen cuando marcas algo como hecho o cuando atiendes una necesidad.</div>';
-  let mes = '';
-  lista.forEach(e => {
-    const m = (e.fecha || '').slice(0, 7);
-    if (m !== mes) { mes = m; html += `<div class="titulo-mes">${m ? MESES[Number(m.slice(5)) - 1] + ' de ' + m.slice(0, 4) : 'Sin fecha'}</div>`; }
-    const c = e.cargo === 'necesidades' ? null : cargoPorId(e.cargo);
-    html += `<button class="tarea" data-h="${e.tipo}|${e.id}|${e.idx}|lista" style="margin-bottom:8px"><div class="t">${esc(e.titulo)}</div>
-      <div class="meta"><span class="chip verde">${esc(fechaLarga(e.fecha))}</span>${c ? `<span class="chip cargo" style="--c:${c.color}">${esc(c.nombre)}</span>` : ''}${e.nota ? `<span class="chip">${esc(e.nota.length > 70 ? e.nota.slice(0, 70) + '...' : e.nota)}</span>` : ''}</div></button>`;
-  });
-  if (todas.length > lista.length) html += `<p class="ayuda" style="margin-top:8px">Se muestran los ${lista.length} más recientes. Usa el buscador para ver los demás.</p>`;
+  if (!todas.length) html += '<div class="vacio" style="margin-top:12px">Todavía no hay registros. Aparecen cuando marcas algo como hecho o cuando atiendes una necesidad.</div>';
+  if (porCargo) {
+    cargosOrden().map(c => c.id).concat('necesidades').forEach(id => {
+      const l = todas.filter(e => e.cargo === id);
+      if (!l.length) return;
+      const c = id === 'necesidades' ? { nombre: 'Necesidades de los publicadores', color: 'var(--morado)' } : cargoPorId(id);
+      const abierto = filtroHist.abiertos.includes(id) || !!filtroHist.q || !!filtroHist.cargo;
+      html += `<details class="hist-cargo" data-hc="${id}" ${abierto ? 'open' : ''}><summary><span class="punto" style="background:${c.color}"></span>${esc(c.nombre)}<span class="cuenta">${l.length}</span></summary>
+        ${l.slice(0, 60).map(e => tarjetaEntrada(e, false)).join('')}${l.length > 60 ? '<p class="ayuda">Se muestran los 60 más recientes de este cargo.</p>' : ''}</details>`;
+    });
+  } else {
+    const lista = todas.slice(0, 150);
+    let mes = '';
+    lista.forEach(e => {
+      const m = (e.fecha || '').slice(0, 7);
+      if (m !== mes) { mes = m; html += `<div class="titulo-mes">${m ? MESES[Number(m.slice(5)) - 1] + ' de ' + m.slice(0, 4) : 'Sin fecha'}</div>`; }
+      html += tarjetaEntrada(e, true);
+    });
+    if (todas.length > lista.length) html += `<p class="ayuda" style="margin-top:8px">Se muestran los ${lista.length} más recientes. Usa el buscador para ver los demás.</p>`;
+  }
   vista.innerHTML = html;
 }
+document.addEventListener('toggle', (e) => {
+  const d = e.target;
+  if (!d.dataset || !d.dataset.hc) return;
+  const a = filtroHist.abiertos, i = a.indexOf(d.dataset.hc);
+  if (d.open && i < 0) a.push(d.dataset.hc); else if (!d.open && i >= 0) a.splice(i, 1);
+}, true);
 
 function completar(t, conToast = true, fecha, nota) {
   agregarEntrada(t, fecha, nota);
@@ -1224,10 +1295,21 @@ hoja.addEventListener('click', (e) => {
   const tb = e.target.closest('[data-abrir-tarea]');
   if (tb) return abrirTarea(tb.dataset.abrirTarea);
   if (id === 'btnCerrar') cerrarHoja();
+  if (id === 'btnRevisado' && tareaEditando) {
+    const fd = new FormData($('#formTarea')), fechaR = fd.get('fechaHecho') || hoyISO(), notaR = (fd.get('notaHecho') || '').trim();
+    leerFormTarea($('#formTarea'));
+    const t = tareaEditando.t;
+    agregarEntrada(t, fechaR, notaR || 'Revisado');
+    t.ultimaRevision = fechaR;
+    marcarCambio('tareas', t);
+    cerrarHoja(); render();
+    return toast('Revisado. Te lo recuerdo de nuevo el ' + fechaLarga(sumarMeses(fechaR, t.revisarCada)));
+  }
   if (id === 'btnOcultar' && tareaEditando) {
     const t = tareaEditando.t;
     leerFormTarea($('#formTarea'));
     t.oculta = !t.oculta;
+    if (!t.oculta && esRecurrente(t) && t.proxima && t.proxima < hoyISO()) t.proxima = siguienteFecha(t);
     marcarCambio('tareas', t);
     cerrarHoja(); render();
     return toast(t.oculta ? 'Oculta. La encuentras en Ocultas, al final del cargo.' : 'Vuelve a mostrarse en los pendientes');
@@ -1314,8 +1396,9 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-h],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-h],[data-vista-hist],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
+  if (b.dataset.vistaHist) { filtroHist.vista = b.dataset.vistaHist; return render(); }
   if (b.dataset.h) { const [tipo, rid, idx, ctx] = b.dataset.h.split('|'); return abrirEntrada(tipo, rid, Number(idx), ctx); }
   if (b.dataset.histPub) return abrirHistPub(b.dataset.histPub);
   if (b.dataset.pdel || b.dataset.adel) {
@@ -1437,6 +1520,7 @@ vista.addEventListener('change', (e) => {
     toast('Guardado');
   }
   if (e.target.id === 'filtroHistCargo') { filtroHist.cargo = e.target.value; render(); }
+  if (e.target.id === 'chkOmitidas') { filtroHist.omitidas = e.target.checked; render(); }
   if (e.target.id === 'archivo' && e.target.files[0]) importar(e.target.files[0]);
 });
 
@@ -1552,6 +1636,7 @@ async function sincronizar(manual) {
     if (fechasEnviadas && DB.fechas.updatedAt === fechasEnviadas) SUCIOS.fechas = false;
     const escribiendo = document.activeElement && document.activeElement.matches('textarea, input');
     fusionar(r.datos, false);
+    renovarVencidas();
     CFG.ultimoSync = Date.now(); guardarCfg();
     errorSync = '';
     if (manual) toast('Sincronizado');
@@ -1582,6 +1667,7 @@ document.addEventListener('visibilitychange', () => {
   } else {
     if (ocultaDesde && Date.now() - ocultaDesde > MINUTOS_PARA_BLOQUEAR * 60000) bloquear();
     ocultaDesde = null;
+    if (renovarVencidas()) render();
     sincronizar(false);
   }
 });
@@ -1703,7 +1789,7 @@ function toast(msg) {
 }
 
 /* ================= Inicio ================= */
-normalizar(); guardarLocal();
+normalizar(); guardarLocal(); renovarVencidas();
 render();
 revisarRecordatorios();
 sincronizar(false);
