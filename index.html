@@ -282,6 +282,12 @@
   .resp-aux { font-size: 12.5px; color: var(--gris); }
   details.ocultas { margin-top: 14px; }
   details.ocultas > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gris); padding: 8px 0; }
+  .asamblea-circ { margin-bottom: 14px; }
+  .asamblea-circ:last-child { margin-bottom: 0; }
+  .asamblea-circ .visita-et { display: block; margin-bottom: 4px; }
+  .asamblea-circ .visita-res { margin-top: 6px; }
+  .asamblea-circ.pasada { opacity: .7; }
+  .chk-pasada { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; color: var(--tinta); }
   .chk-omitidas { display: flex; align-items: center; gap: 8px; margin: 10px 2px 0; font-size: 13px; color: var(--gris); }
   .segmento { display: flex; margin: 10px 0 4px; border: 1px solid var(--linea); border-radius: 8px; overflow: hidden; background: #fff; }
   .segmento button { flex: 1; padding: 9px 6px; border: 0; background: transparent; font-size: 13.5px; font-weight: 600; color: var(--gris); }
@@ -345,11 +351,29 @@ const LS_DISP = 'ancianos_pwa_disp_v1';
 
 const EVENTOS = {
   visitaSC: 'Visita del superintendente de circuito',
-  asambleaCircuito: 'Asamblea de circuito',
   asambleaRegional: 'Asamblea regional',
   conmemoracion: 'Conmemoración',
   discursoEspecial: 'Discurso especial'
-};/* Eventos que duran varios días: tienen fecha de inicio y de final */
+};
+/* Hay dos asambleas de circuito por año de servicio (septiembre a septiembre). Cada tarea relativa a
+   "asambleaCircuito" usa la que esté más próxima entre las dos, la que no se haya marcado como ya ocurrida. */
+const ASAMBLEAS_CIRCUITO = ['asambleaCircuito1', 'asambleaCircuito2'];
+function proximaAsambleaCircuito() {
+  const f = DB.fechas, hoy = hoyISO();
+  const activas = ASAMBLEAS_CIRCUITO.filter(k => !f[k + 'Pasada']);
+  const conFecha = activas.filter(k => f[k]).sort((a, b) => f[a].localeCompare(f[b]));
+  const futura = conFecha.find(k => f[k] >= hoy);
+  return futura || conFecha[0] || activas[0] || ASAMBLEAS_CIRCUITO[0];
+}
+const etiquetaEvento = (k) => k === 'asambleaCircuito' ? 'Asamblea de circuito' : EVENTOS[k];
+/* ¿Falta alguna fecha clave? Para la asamblea de circuito basta con que una de las dos esté lista
+   (con fecha, o marcada como que ya pasó); las otras fechas son de un solo valor. */
+function faltanFechasClave() {
+  const f = DB.fechas;
+  const faltan = Object.keys(EVENTOS).filter(k => !f[k]);
+  const sinAsamblea = !ASAMBLEAS_CIRCUITO.some(k => f[k] || f[k + 'Pasada']);
+  return sinAsamblea ? ['asambleaCircuito', ...faltan] : faltan;
+}/* Eventos que duran varios días: tienen fecha de inicio y de final */
 const EVENTOS_RANGO = {
   visitaSC: { fin: 'visitaSCFin', de: 'la visita', Art: 'La visita', ini: 'Inicio de la visita', final: 'Final de la visita' },
   asambleaRegional: { fin: 'asambleaRegionalFin', de: 'la asamblea', Art: 'La asamblea', ini: 'Inicio de la asamblea', final: 'Final de la asamblea' }
@@ -508,6 +532,7 @@ document.addEventListener('change', (e) => {
 const anclaDe = (t) => t.ancla || ((t.dias || 0) > 0 ? 'fin' : 'inicio');
 function baseEvento(t) {
   const f = DB.fechas;
+  if (t.evento === 'asambleaCircuito') return f[proximaAsambleaCircuito()];
   const rg = EVENTOS_RANGO[t.evento];
   if (rg) {
     const ini = f[t.evento], fin = f[rg.fin] || ini;
@@ -529,7 +554,7 @@ function situacion(t) {
   let fecha = null, hecha = false, falta = '';
   if (t.tipo === 'relativa') {
     const ev = baseEvento(t);
-    if (!ev) { falta = 'Falta la fecha de: ' + EVENTOS[t.evento]; }
+    if (!ev) { falta = 'Falta la fecha de: ' + etiquetaEvento(t.evento); }
     else { fecha = sumarDias(ev, t.dias || 0); hecha = t.hechoPara === ev; }
   } else {
     fecha = t.proxima || null;
@@ -550,7 +575,7 @@ function describirRepeticion(t) {
     case 'relativa': {
       const n = t.dias || 0;
       const txt = n === 0 ? 'El día de' : Math.abs(n) + (Math.abs(n) === 1 ? ' día ' : ' días ') + (n < 0 ? 'antes de' : 'después de');
-      return txt + ': ' + EVENTOS[t.evento] + (EVENTOS_RANGO[t.evento] ? (anclaDe(t) === 'fin' ? ' (desde el final)' : ' (desde el inicio)') : '');
+      return txt + ': ' + etiquetaEvento(t.evento) + (EVENTOS_RANGO[t.evento] ? (anclaDe(t) === 'fin' ? ' (desde el final)' : ' (desde el inicio)') : '');
     }
     case 'unica': return 'Una sola vez';
     default: return TIPOS[t.tipo] || '';
@@ -749,9 +774,9 @@ function vistaInicio() {
   if (porRevisar.length) html += `<h2 class="titulo-seccion">Por revisar<span class="cuenta">${porRevisar.length}</span></h2>` + listaTareas(porRevisar, true, '');
   html += `<h2 class="titulo-seccion">Por cargo</h2>` + botonesCargos();
 
-  const faltan = Object.keys(EVENTOS).filter(k => !DB.fechas[k]);
+  const faltan = faltanFechasClave();
   if (faltan.length) html += `<h2 class="titulo-seccion">Fechas clave sin definir</h2>
-    <div class="vacio">${faltan.map(k => esc(EVENTOS[k])).join(', ')}. Agrégalas en Ajustes para que se calculen sus tareas.</div>`;
+    <div class="vacio">${faltan.map(k => esc(etiquetaEvento(k))).join(', ')}. Agrégalas en Ajustes para que se calculen sus tareas.</div>`;
   vista.innerHTML = html;
 }
 
@@ -998,6 +1023,27 @@ function textoRango(k) {
   if (ini) return rg.Art + ' empieza el ' + completa(ini) + '. Falta la fecha en que termina.';
   return 'Pon el día en que empieza ' + rg.de + ' y el día en que termina.';
 }
+function filaAsambleaCircuito(k, numero) {
+  const f = DB.fechas, pasada = !!f[k + 'Pasada'], fecha = f[k];
+  const completa = (x) => { const d = deISO(x); return d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear(); };
+  let resumen;
+  if (pasada) resumen = fecha ? 'Ya pasó, fue el ' + completa(fecha) + '.' : 'Ya pasó. No se guardó la fecha exacta, pero no se usará para calcular tareas futuras.';
+  else if (fecha) resumen = 'Será el ' + completa(fecha) + '.';
+  else resumen = 'Pon la fecha cuando la sepas, o marca que ya pasó si se te fue la fecha.';
+  return `<div class="asamblea-circ ${pasada ? 'pasada' : ''}">
+    <span class="visita-et">Asamblea de circuito ${numero}</span>
+    ${selectorFecha('f_' + k, fecha, k)}
+    <label class="chk-pasada"><input type="checkbox" data-pasada="${k}" ${pasada ? 'checked' : ''}> Ya pasó (no recuerdo o no importa la fecha exacta)</label>
+    <div class="visita-res">${esc(resumen)}</div></div>`;
+}
+function bloqueAsambleasCircuito() {
+  return `<div class="visita-sc">
+    <div class="visita-tit">Asambleas de circuito</div>
+    <div class="visita-sub">Hay dos por año de servicio (de septiembre a septiembre). Las tareas relativas a la asamblea de circuito usan la más próxima de las dos que no hayas marcado como ya ocurrida.</div>
+    ${filaAsambleaCircuito('asambleaCircuito1', 1)}
+    ${filaAsambleaCircuito('asambleaCircuito2', 2)}
+  </div>`;
+}
 function bloqueRango(k, titulo) {
   const rg = EVENTOS_RANGO[k];
   return `<div class="visita-sc"><div class="visita-tit">${esc(titulo)}</div>
@@ -1027,6 +1073,7 @@ function vistaAjustes() {
   </div>`;
 
   html += `<h2 class="titulo-seccion">Fechas clave</h2><div class="panel">
+    ${bloqueAsambleasCircuito()}
     ${Object.entries(EVENTOS).map(([k, l]) => EVENTOS_RANGO[k] ? bloqueRango(k, l) : `<div class="campo"><span>${esc(l)}</span>${selectorFecha('f_' + k, DB.fechas[k], k)}</div>`).join('')}
     <div class="ayuda">Las tareas que dependen de estas fechas se calculan solas.</div>
   </div>`;
@@ -1074,7 +1121,7 @@ function camposTipo(t) {
       <label class="campo"><span>Mes</span><select name="mes">${opt(MESES.map((m, i) => [i + 1, m]), t.mes || 1)}</select></label></div>`;
     case 'intervalo': return `<label class="campo"><span>Cada cuántos meses (0 = sin repetir)</span><input name="meses" type="number" min="0" max="60" value="${t.meses ?? 12}"></label>
       <div class="campo"><span>Próxima fecha</span>${selectorFecha('proxima', t.proxima)}</div>`;
-    case 'relativa': return `<div class="dos"><label class="campo"><span>Fecha clave</span><select name="evento">${opt(Object.entries(EVENTOS), t.evento)}</select></label>
+    case 'relativa': return `<div class="dos"><label class="campo"><span>Fecha clave</span><select name="evento">${opt([['asambleaCircuito', 'Asamblea de circuito'], ...Object.entries(EVENTOS)], t.evento)}</select></label>
       <label class="campo"><span>Días (negativo = antes)</span><input name="dias" type="number" value="${t.dias || 0}"></label></div>` +
       (EVENTOS_RANGO[t.evento] ? `<label class="campo"><span>Contar desde</span><select name="ancla">${opt([['inicio', EVENTOS_RANGO[t.evento].ini], ['fin', EVENTOS_RANGO[t.evento].final]], anclaDe(t))}</select></label>` : '');
     case 'unica': return `<div class="campo"><span>Fecha</span>${selectorFecha('proxima', t.proxima)}</div>`;
@@ -1528,6 +1575,11 @@ vista.addEventListener('change', (e) => {
     if (rng && v && fe[rng.fin] && fe[rng.fin] < v) fe[rng.fin] = v;
     fe[k] = v; marcarCambio('fechas', fe); toast('Fecha guardada');
     if (dueno || rng) render();
+  }
+  if (e.target.dataset.pasada) {
+    const fe = DB.fechas, k = e.target.dataset.pasada + 'Pasada';
+    if (e.target.checked) fe[k] = true; else delete fe[k];
+    marcarCambio('fechas', fe); toast('Guardado'); render();
   }
   const dpuesto = (txt) => { const [cid, pid, x] = txt.split('|'), c = DB.cargos.find(y => y.id === cid); return { c, pc: cfgCargo(c).puestos.find(y => y.id === pid), x }; };
   if (e.target.dataset.ps) {
