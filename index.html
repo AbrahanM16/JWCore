@@ -267,6 +267,10 @@
   .visita-res { margin-top: 10px; padding: 8px 10px; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--navy); }
   .subpuesto { font-size: 12.5px; font-weight: 700; color: var(--navy); margin: 12px 0 4px; }
   .aux-bloque { margin-top: 10px; padding: 8px 10px; background: var(--caja); border-radius: 8px; }
+  .super-grupo { margin-bottom: 10px; padding: 8px 10px; background: var(--caja); border-radius: 8px; }
+  .super-grupo .fila-sel.con-num { margin-bottom: 0; }
+  .aux-persona { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--linea); }
+  .aux-persona-tit { display: block; font-size: 11.5px; font-weight: 700; color: var(--gris); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
   .aux-tit { font-size: 11.5px; font-weight: 700; color: var(--gris); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
   .aux-fila { margin-bottom: 8px; }
   .aux-nota { width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--linea); border-radius: 8px; background: #fff; font-size: 13px; }
@@ -597,14 +601,17 @@ function idsPuesto(c, pc) {
 }
 const numsPuesto = (c, pid) => (c.puestos && c.puestos[pid] && c.puestos[pid].nums) || {};
 const auxPuesto = (c, pid) => (c.puestos && c.puestos[pid] && c.puestos[pid].aux) || [];
+/* Auxiliar propio de cada persona en un puesto (por ejemplo, el auxiliar de cada superintendente de grupo) */
+const auxPorPersona = (c, pid) => (c.puestos && c.puestos[pid] && c.puestos[pid].auxPorPersona) || {};
 function editarPuesto(c, pc, fn) {
   c.puestos = c.puestos || {};
   const g = c.puestos[pc.id] = c.puestos[pc.id] || {};
   if (g.personas === undefined) g.personas = idsPuesto(c, pc).slice();
-  g.nums = g.nums || {}; g.aux = g.aux || [];
+  g.nums = g.nums || {}; g.aux = g.aux || []; g.auxPorPersona = g.auxPorPersona || {};
   fn(g);
   g.personas = g.personas.filter(Boolean);
   Object.keys(g.nums).forEach(k => { if (!g.personas.includes(k)) delete g.nums[k]; });
+  Object.keys(g.auxPorPersona).forEach(k => { if (!g.personas.includes(k)) delete g.auxPorPersona[k]; });
   marcarCambio('cargos', c);
 }
 function personasDeCargo(c) {
@@ -627,6 +634,14 @@ function bloqueResponsables(c) {
   if (!cfg.puestos) return '';
   const filas = cfg.puestos.map(pc => {
     const nums = numsPuesto(c, pc.id);
+    if (pc.num) {
+      const ap = auxPorPersona(c, pc.id);
+      const lineas = idsPuesto(c, pc).map(pubPorId).filter(Boolean).map(x => {
+        const aux = pubPorId(ap[x.id]);
+        return `<div class="resp-fila">${esc(nombreCorto(x))}${nums[x.id] ? ' (grupo ' + esc(String(nums[x.id])) + ')' : ''}${aux ? `<div class="resp-aux">Auxiliar: ${esc(nombreCorto(aux))}</div>` : ''}</div>`;
+      }).join('');
+      return lineas;
+    }
     const nom = idsPuesto(c, pc).map(pubPorId).filter(Boolean).map(x => nombreCorto(x) + (nums[x.id] ? ' (grupo ' + nums[x.id] + ')' : '')).join(', ');
     const ax = auxPuesto(c, pc.id).map(a => { const x = pubPorId(a.id); return x ? nombreCorto(x) + (a.nota ? ' (' + a.nota + ')' : '') : ''; }).filter(Boolean).join(', ');
     if (!nom && !ax) return '';
@@ -944,13 +959,20 @@ function bloqueAux(c, pc) {
       <input class="aux-nota" data-an="${c.id}|${pc.id}|${i}" value="${esc(a.nota || '')}" placeholder="Tipo de auxiliar o de qué se encarga"></div>`).join('')}
     <div class="fila-sel">${menuPersonas(`data-ax="${c.id}|${pc.id}|${aux.length}"`, '', usados, 'Agregar auxiliar...')}</div></div>`;
 }
+function bloqueAuxPersona(c, pc, idPersona) {
+  const ap = auxPorPersona(c, pc.id), elegido = ap[idPersona] || '';
+  return `<div class="aux-persona"><span class="aux-persona-tit">Auxiliar</span>
+    <div class="fila-sel">${menuPersonas(`data-axp="${c.id}|${pc.id}|${idPersona}"`, elegido, idsPuesto(c, pc), 'Sin auxiliar')}</div></div>`;
+}
 function bloquePuesto(c, pc, conTitulo) {
   const ids = idsPuesto(c, pc), nums = numsPuesto(c, pc.id);
   let h = conTitulo ? `<div class="subpuesto">${esc(pc.rotulo)}</div>` : '';
   if (pc.modo === 'uno') h += menuPersonas(`data-ps="${c.id}|${pc.id}|0"`, ids[0] || '', [], 'Sin asignar');
-  else h += ids.map((id, i) => `<div class="fila-sel ${pc.num ? 'con-num' : ''}">${menuPersonas(`data-ps="${c.id}|${pc.id}|${i}"`, id, ids, 'Quitar de la lista')}${pc.num ? menuNumeroGrupo(c, pc, id, nums[id]) : ''}<button class="mini" type="button" data-pdel="${c.id}|${pc.id}|${i}" aria-label="Quitar">${pc.num ? '✕' : 'Quitar'}</button></div>`).join('') +
+  else if (pc.num) h += ids.map((id, i) => `<div class="super-grupo"><div class="fila-sel con-num">${menuPersonas(`data-ps="${c.id}|${pc.id}|${i}"`, id, ids, 'Quitar de la lista')}${menuNumeroGrupo(c, pc, id, nums[id])}<button class="mini" type="button" data-pdel="${c.id}|${pc.id}|${i}" aria-label="Quitar">✕</button></div>${bloqueAuxPersona(c, pc, id)}</div>`).join('') +
     `<div class="fila-sel">${menuPersonas(`data-ps="${c.id}|${pc.id}|${ids.length}"`, '', ids, 'Agregar a la lista...')}</div>`;
-  return h + (pc.aux ? bloqueAux(c, pc) : '');
+  else h += ids.map((id, i) => `<div class="fila-sel">${menuPersonas(`data-ps="${c.id}|${pc.id}|${i}"`, id, ids, 'Quitar de la lista')}<button class="mini" type="button" data-pdel="${c.id}|${pc.id}|${i}" aria-label="Quitar">Quitar</button></div>`).join('') +
+    `<div class="fila-sel">${menuPersonas(`data-ps="${c.id}|${pc.id}|${ids.length}"`, '', ids, 'Agregar a la lista...')}</div>`;
+  return h + (pc.aux && !pc.num ? bloqueAux(c, pc) : '');
 }
 function filaCargoAjustes(c) {
   const cfg = cfgCargo(c);
@@ -1527,6 +1549,11 @@ vista.addEventListener('change', (e) => {
     const { c, pc, x } = dpuesto(e.target.dataset.an), i = Number(x), v = e.target.value.trim();
     editarPuesto(c, pc, g => { if (g.aux[i]) g.aux[i].nota = v; });
     toast('Guardado');
+  }
+  if (e.target.dataset.axp) {
+    const [cid, pid, idPersona] = e.target.dataset.axp.split('|'), c = DB.cargos.find(y => y.id === cid), pc = cfgCargo(c).puestos.find(y => y.id === pid), v = e.target.value;
+    editarPuesto(c, pc, g => { if (v) g.auxPorPersona[idPersona] = v; else delete g.auxPorPersona[idPersona]; });
+    render(); toast('Guardado');
   }
   if (e.target.id === 'filtroHistCargo') { filtroHist.cargo = e.target.value; render(); }
   if (e.target.id === 'chkOmitidas') { filtroHist.omitidas = e.target.checked; render(); }
