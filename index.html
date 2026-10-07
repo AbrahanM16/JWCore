@@ -1667,6 +1667,9 @@ function fusionar(remoto, marcarSucio) {
 }
 
 function normalizar() {
+  /* Una marca de tiempo en el futuro (de una actualización anterior) hacía perder las ediciones; se trata como 0 para que gane la de la hoja. */
+  ['tareas', 'publicadores', 'cargos', 'formularios'].forEach(tipo => DB[tipo].forEach(r => { if ((r.updatedAt || 0) > 4e12) r.updatedAt = 0; }));
+  if ((DB.fechas.updatedAt || 0) > 4e12) DB.fechas.updatedAt = 0;
   DB.tareas.forEach(t => {
     if (['semanal', 'mensual', 'anual'].includes(t.tipo) && !t.proxima) {
       t.proxima = primeraFecha(t);
