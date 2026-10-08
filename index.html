@@ -1023,7 +1023,7 @@ function textoRango(k) {
   if (ini) return rg.Art + ' empieza el ' + completa(ini) + '. Falta la fecha en que termina.';
   return 'Pon el día en que empieza ' + rg.de + ' y el día en que termina.';
 }
-function filaAsambleaCircuito(k, numero) {
+function filaAsambleaCircuito(k, nombre) {
   const f = DB.fechas, pasada = !!f[k + 'Pasada'], fecha = f[k];
   const completa = (x) => { const d = deISO(x); return d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear(); };
   let resumen;
@@ -1031,7 +1031,7 @@ function filaAsambleaCircuito(k, numero) {
   else if (fecha) resumen = 'Será el ' + completa(fecha) + '.';
   else resumen = 'Pon la fecha cuando la sepas, o marca que ya pasó si se te fue la fecha.';
   return `<div class="asamblea-circ ${pasada ? 'pasada' : ''}">
-    <span class="visita-et">Asamblea de circuito ${numero}</span>
+    <span class="visita-et">Asamblea de circuito ${nombre}</span>
     ${selectorFecha('f_' + k, fecha, k)}
     <label class="chk-pasada"><input type="checkbox" data-pasada="${k}" ${pasada ? 'checked' : ''}> Ya pasó (no recuerdo o no importa la fecha exacta)</label>
     <div class="visita-res">${esc(resumen)}</div></div>`;
@@ -1039,9 +1039,9 @@ function filaAsambleaCircuito(k, numero) {
 function bloqueAsambleasCircuito() {
   return `<div class="visita-sc">
     <div class="visita-tit">Asambleas de circuito</div>
-    <div class="visita-sub">Hay dos por año de servicio (de septiembre a septiembre). Las tareas relativas a la asamblea de circuito usan la más próxima de las dos que no hayas marcado como ya ocurrida.</div>
-    ${filaAsambleaCircuito('asambleaCircuito1', 1)}
-    ${filaAsambleaCircuito('asambleaCircuito2', 2)}
+    <div class="visita-sub">Hay dos por año de servicio (de septiembre a septiembre): una con representante de la sucursal y otra con el superintendente de circuito. Las tareas relativas a la asamblea de circuito usan la más próxima de las dos que no hayas marcado como ya ocurrida.</div>
+    ${filaAsambleaCircuito('asambleaCircuito1', 'con representante de la sucursal')}
+    ${filaAsambleaCircuito('asambleaCircuito2', 'con el superintendente de circuito')}
   </div>`;
 }
 function bloqueRango(k, titulo) {
@@ -1695,6 +1695,9 @@ function programarEnvio() {
   temporizadorEnvio = setTimeout(() => sincronizar(false), 1200);
 }
 
+/* Un error de sincronización cuyo texto se muestra tal cual en la app */
+function falloSync(mensaje) { const e = new Error(mensaje); e.visible = true; return e; }
+
 async function sincronizar(manual) {
   if (!CFG.url) { if (manual) toast('Primero pon la dirección del script'); return; }
   if (enviando) return;
@@ -1707,8 +1710,13 @@ async function sincronizar(manual) {
   };
   const fechasEnviadas = cuerpo.fechas ? cuerpo.fechas.updatedAt : null;
   try {
-    const resp = await fetch(CFG.url, { method: 'POST', body: JSON.stringify(cuerpo), redirect: 'follow' });
-    const r = await resp.json();
+    let resp;
+    try { resp = await fetch(CFG.url, { method: 'POST', body: JSON.stringify(cuerpo), redirect: 'follow' }); }
+    catch (e) { throw falloSync('Sin conexión con la hoja (' + (e.message || 'la red rechazó la petición') + ')'); }
+    if (!resp.ok) throw falloSync('El script respondió con error HTTP ' + resp.status);
+    let r;
+    try { r = await resp.json(); }
+    catch (e) { throw falloSync('La respuesta del script no es válida: revisa que la implementación sea para cualquier persona y que la dirección termine en /exec'); }
     if (!r.ok) {
       const motivos = {
         'Dispositivo pendiente': 'Esperando aprobación en la hoja',
@@ -1716,7 +1724,7 @@ async function sincronizar(manual) {
         'Clave incorrecta': 'Clave incorrecta',
         'Bloqueado temporalmente': 'Acceso bloqueado por intentos fallidos'
       };
-      throw new Error(motivos[r.error] || 'Error del servidor');
+      throw falloSync(motivos[r.error] || 'Error del script: ' + (r.error || 'sin detalle'));
     }
     ['tareas', 'publicadores', 'cargos'].forEach(tipo => {
       enviados[tipo].forEach(([id, ts]) => {
@@ -1733,9 +1741,8 @@ async function sincronizar(manual) {
     if (manual) toast('Sincronizado');
     if (!escribiendo && !hoja.classList.contains('abierta')) render();
   } catch (err) {
-    const conocido = ['Esperando aprobación en la hoja', 'Este dispositivo está bloqueado', 'Clave incorrecta', 'Acceso bloqueado por intentos fallidos'].includes(err.message);
-    errorSync = conocido ? err.message : 'Sin conexión con la hoja';
-    if (manual) toast(conocido ? err.message : 'No se pudo conectar con la hoja');
+    errorSync = err.visible ? err.message : 'Error al procesar los datos recibidos (' + err.message + ')';
+    if (manual) toast(errorSync);
   } finally {
     enviando = false; refrescarEstadoSync();
     const quedan = SUCIOS.tareas.length + SUCIOS.publicadores.length + SUCIOS.cargos.length + (SUCIOS.fechas ? 1 : 0);
