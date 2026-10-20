@@ -263,6 +263,14 @@ aplicarTema();
   @media (prefers-reduced-motion: reduce) { .acordeon > summary .flecha { transition: none; } }
   .fila-cargo { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--linea); }
   .fila-cargo:last-child { border-bottom: none; }
+  .aj-resumen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+  .aj-barra { height: 6px; border-radius: 999px; background: var(--caja); margin: 8px 0 12px; overflow: hidden; }
+  .aj-barra i { display: block; height: 100%; background: var(--verde); border-radius: 999px; }
+  .mini.on-filtro { background: var(--ambar); color: #fff; border-color: transparent; }
+  .acordeon.ajc > summary .persona { display: block; margin-top: 1px; }
+  .acordeon.ajc > summary .persona.sin { font-weight: 700; opacity: 1; }
+  .acordeon.ajc .cuerpo { padding-top: 0; }
+  .clave-oculta { -webkit-text-security: disc; text-security: disc; }
 
   /* Hoja modal */
   .velo { position: fixed; inset: 0; background: rgba(20,24,32,.45); z-index: 40; display: none; }
@@ -920,6 +928,8 @@ function vistaCargos() {
   vista.innerHTML = html;
 }
 vista.addEventListener('toggle', (e) => {
+  const aj = e.target.dataset && e.target.dataset.ajc;
+  if (aj) { if (e.target.open) ajCargos.abiertos.add(aj); else ajCargos.abiertos.delete(aj); return; }
   const id = e.target.dataset && e.target.dataset.cargo;
   if (!id) return;
   if (e.target.open) cargosAbiertos.add(id); else cargosAbiertos.delete(id);
@@ -1078,16 +1088,48 @@ function bloquePuesto(c, pc, conTitulo) {
     `<div class="fila-sel">${menuPersonas(`data-ps="${c.id}|${pc.id}|${ids.length}"`, '', ids, 'Agregar a la lista...')}</div>`;
   return h + (pc.aux && !pc.num ? bloqueAux(c, pc) : '');
 }
+/* Quién tiene cada cargo, en tarjetas plegables: cerrada muestra el cargo y su responsable; abierta, los menús para editarlo */
+let ajCargos = { abiertos: new Set(), faltan: false };
+function resumenCargoAjustes(c) {
+  const cfg = cfgCargo(c);
+  if (cfg.especial) { const n = personasDeCargo(c); return { lineas: [n.map(nombreCorto).join(', ')], falta: !n.length }; }
+  let falta = false;
+  const lineas = cfg.puestos.map(pc => {
+    const nums = numsPuesto(c, pc.id);
+    const nom = idsPuesto(c, pc).map(pubPorId).filter(Boolean).map(x => nombreCorto(x) + (nums[x.id] ? ' (grupo ' + nums[x.id] + ')' : '')).join(', ');
+    if (!nom) falta = true;
+    return (cfg.puestos.length > 1 ? pc.rotulo + ': ' : '') + nom;
+  });
+  return { lineas, falta };
+}
 function filaCargoAjustes(c) {
   const cfg = cfgCargo(c);
   if (cfg.especial === 'rota') return '';
+  const r = resumenCargoAjustes(c);
+  if (ajCargos.faltan && !r.falta) return '';
   const chips = (l) => `<div class="auto-lista">${l.length ? l.map(x => `<span class="chip">${esc(nombreCorto(x))}</span>`).join('') : '<span class="ayuda">Sin asignar todavía.</span>'}</div>`;
   let cuerpo = '';
   if (cfg.especial === 'igual') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Es la misma lista de Todos los ancianos.</div>';
   else if (cfg.especial === 'comite') cuerpo = chips(personasDeCargo(c)) + '<div class="ayuda">Lo forman 3 hermanos: el Coordinador, el Secretario y el Superintendente de servicio.</div>';
   else cuerpo = cfg.puestos.map(pc => bloquePuesto(c, pc, cfg.puestos.length > 1)).join('');
   const antes = cfg.puestos && c.persona && !personasDeCargo(c).length ? `<div class="ayuda">Antes decía: ${esc(c.persona)}</div>` : '';
-  return `<div class="fila-cargo"><span style="font-weight:600;font-size:13.5px">${esc(c.nombre)}</span>${cuerpo}${antes}</div>`;
+  const lineas = r.lineas.map(l => l.endsWith(': ') || !l ? l + 'Sin asignar' : l);
+  return `<details class="acordeon ajc" data-ajc="${c.id}" style="--c:${c.color}" ${ajCargos.abiertos.has(c.id) ? 'open' : ''}>
+    <summary>
+      <div><div class="nombre">${esc(c.nombre)}</div>${lineas.map(l => `<div class="persona ${/Sin asignar$/.test(l) ? 'sin' : ''}">${esc(l)}</div>`).join('')}</div>
+      <div class="cuentas"><span class="${r.falta ? 'alerta' : ''}">${r.falta ? 'Falta' : '✓'}</span><span class="flecha">▼</span></div>
+    </summary>
+    <div class="cuerpo"><div class="fila-cargo">${cuerpo}${antes}</div></div>
+  </details>`;
+}
+function bloqueCargosAjustes() {
+  const lista = cargosOrden().filter(c => cfgCargo(c).especial !== 'rota');
+  const faltan = lista.filter(c => resumenCargoAjustes(c).falta).length, listos = lista.length - faltan;
+  const tarjetas = cargosOrden().map(filaCargoAjustes).join('');
+  return `<div class="aj-resumen"><span><b>${listos} de ${lista.length}</b> cargos con responsable</span>
+      ${faltan || ajCargos.faltan ? `<button type="button" class="mini ${ajCargos.faltan ? 'on-filtro' : ''}" data-ajfaltan="1">${ajCargos.faltan ? 'Ver todos' : 'Ver solo los que faltan (' + faltan + ')'}</button>` : ''}</div>
+    <div class="aj-barra"><i style="width:${lista.length ? Math.round(listos * 100 / lista.length) : 0}%"></i></div>
+    ${tarjetas || '<div class="vacio">Todos los cargos tienen responsable.</div>'}`;
 }
 function textoRango(k) {
   const rg = EVENTOS_RANGO[k], ini = DB.fechas[k], fin = DB.fechas[rg.fin];
@@ -1139,7 +1181,7 @@ function vistaAjustes() {
     <label class="campo"><span>Dirección del script (termina en /exec)</span>
       <input id="cfgUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(CFG.url)}"></label>
     <label class="campo"><span>Clave</span>
-      <input id="cfgClave" type="password" autocomplete="off" value="${esc(CFG.clave)}">
+      <input id="cfgClave" class="clave-oculta" type="text" name="jwcore-codigo" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other" value="${esc(CFG.clave)}">
       <div class="ayuda">La misma palabra que pusiste en CLAVE dentro del script.</div></label>
     <label class="campo"><span>Nombre de este dispositivo</span>
       <input id="cfgDisp" value="${esc(DISP.nombre)}" placeholder="Ej. Mi celular">
@@ -1158,8 +1200,8 @@ function vistaAjustes() {
   </div>`;
 
   html += `<h2 class="titulo-seccion">Quién tiene cada cargo</h2><div class="panel">
-    ${cargosOrden().map(filaCargoAjustes).join('')}
-    <div class="ayuda" style="margin-top:8px">En los menús aparecen todos los hermanos varones, con los ancianos y siervos ministeriales primero. En las listas, al elegir un nombre se abre otro menú para seguir agregando, y con Quitar lo sacas. Cada puesto puede llevar auxiliares, con una nota de qué se encargan. Si alguien no aparece, en Necesidades, Editar, indica que es hermano. La presidencia de Vida y Ministerio se turna cada semana y no se asigna aquí.</div>
+    ${bloqueCargosAjustes()}
+    <div class="ayuda" style="margin-top:8px">Toca un cargo para cambiar quién lo tiene. En los menús aparecen todos los hermanos varones, con los ancianos y siervos ministeriales primero. En las listas, al elegir un nombre se abre otro menú para seguir agregando, y con Quitar lo sacas. Cada puesto puede llevar auxiliares, con una nota de qué se encargan. Si alguien no aparece, en Necesidades, Editar, indica que es hermano. La presidencia de Vida y Ministerio se turna cada semana y no se asigna aquí.</div>
   </div>`;
 
   html += `<h2 class="titulo-seccion">Apariencia</h2><div class="panel">
@@ -1585,8 +1627,9 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
+  if (b.dataset.ajfaltan) { ajCargos.faltan = !ajCargos.faltan; return render(); }
   if (b.dataset.omitir) {
     const que = b.dataset.omitir;
     if (que === 'todas') return omitirVarias(tareasActivas(), ' de todos los cargos');
