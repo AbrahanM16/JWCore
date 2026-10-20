@@ -602,16 +602,20 @@ function revision(t) {
 function situacion(t) {
   if (t.tipo === 'permanente') { const r = revision(t); return r ? { clase: 'permanente', revisar: r.toca, proxRev: r.fecha } : { clase: 'permanente' }; }
   if (t.tipo === 'evento') return { clase: 'evento', hecha: t.estado === 'hecho' };
-  let fecha = null, hecha = false, falta = '';
+  let fecha = null, hecha = false, omitida = false, falta = '';
   if (t.tipo === 'relativa') {
     const ev = baseEvento(t);
     if (!ev) { falta = 'Falta la fecha de: ' + etiquetaEvento(t.evento); }
-    else { fecha = sumarDias(ev, t.dias || 0); hecha = t.hechoPara === ev; }
+    else {
+      fecha = sumarDias(ev, t.dias || 0);
+      omitida = t.omitidoPara === ev && t.hechoPara !== ev;
+      hecha = t.hechoPara === ev || omitida;
+    }
   } else {
     fecha = t.proxima || null;
     hecha = t.tipo === 'unica' && t.estado === 'hecho';
   }
-  if (hecha) return { clase: 'hecha', fecha, hecha: true };
+  if (hecha) return { clase: 'hecha', fecha, hecha: true, omitida };
   if (!fecha) return { clase: 'sinfecha', falta };
   const d = diasHasta(fecha);
   return { clase: d < 0 ? 'vencida' : d <= 7 ? 'semana' : d <= 30 ? 'mes' : 'futura', fecha, dias: d };
@@ -653,7 +657,6 @@ const CARGO_CFG = {
     { id: 'limpieza', rotulo: 'Coordinador de limpieza', modo: 'uno', aux: true },
     { id: 'coordMant', rotulo: 'Coordinador del comité de mantenimiento', modo: 'uno', aux: true },
     { id: 'comMant', rotulo: 'Integrantes del comité de mantenimiento', modo: 'varios' }] },
-  apoyo: { puestos: [{ id: 'p', modo: 'varios', aux: true }] },
   todos: { puestos: [{ id: 'p', modo: 'varios', porDefecto: 'anciano' }] }, cuerpo: { especial: 'igual', de: 'todos' },
   sm: { puestos: [{ id: 'p', modo: 'varios', porDefecto: 'sm' }] }, presidente: { especial: 'rota' }
 };
@@ -768,7 +771,7 @@ function tarjetaTarea(t, mostrarCargo) {
   if (s.clase === 'vencida') chipFecha = `<span class="chip rojo">Venció el ${fechaLarga(s.fecha)}</span>`;
   else if (s.clase === 'semana') chipFecha = `<span class="chip ambar">${s.dias === 0 ? 'Hoy' : s.dias === 1 ? 'Mañana' : fechaLarga(s.fecha)}</span>`;
   else if (s.clase === 'mes' || s.clase === 'futura') chipFecha = `<span class="chip">${fechaLarga(s.fecha)}</span>`;
-  else if (s.clase === 'hecha') chipFecha = `<span class="chip verde">Hecho</span>`;
+  else if (s.clase === 'hecha') chipFecha = s.omitida ? `<span class="chip ambar">Omitida</span>` : `<span class="chip verde">Hecho</span>`;
   else if (s.clase === 'sinfecha') chipFecha = `<span class="chip">${esc(s.falta || 'Sin fecha asignada')}</span>`;
   const proceso = t.estado === 'proceso' && s.clase !== 'hecha' ? '<span class="chip ambar">En proceso</span>' : (t.oculta ? '<span class="chip">Oculta</span>' : '');
   const nota = t.notas ? '<span class="chip">📝 Nota</span>' : '';
@@ -815,19 +818,43 @@ function vistaInicio() {
   html += `<div class="resumen">
     <div class="dato" style="--c:var(--rojo)"><b>${vencidas.length}</b><span>Atrasadas</span></div>
     <div class="dato" style="--c:var(--ambar)"><b>${semana.length}</b><span>Próximos 7 días</span></div>
-    <div class="dato" style="--c:var(--navy)"><b>${mes.length}</b><span>Próximos 30 días</span></div>
+    <a class="dato" href="#proximas" style="--c:var(--navy);text-decoration:none;color:inherit"><b>${mes.length}</b><span>Próximos 30 días</span></a>
     <a class="dato" href="#necesidades" style="--c:var(--morado);text-decoration:none;color:inherit"><b>${necPend}</b><span>Necesidades por atender</span></a>
   </div>`;
 
   if (recordatorios.length) html += `<h2 class="titulo-seccion">Recordatorios<span class="cuenta">${recordatorios.length}</span></h2>` + listaTareas(recordatorios, true, '');
-  html += `<h2 class="titulo-seccion">Atrasadas<span class="cuenta">${vencidas.length}</span></h2>` + listaTareas(vencidas, true, 'Nada atrasado.');
+  html += `<h2 class="titulo-seccion">Atrasadas<span class="cuenta">${vencidas.length}</span></h2>` + botonOmitir('todas', vencidas, 'Omitir todas las atrasadas') + listaTareas(vencidas, true, 'Nada atrasado.');
   html += `<h2 class="titulo-seccion">Próximos 7 días<span class="cuenta">${semana.length}</span></h2>` + listaTareas(semana, true, 'Nada para esta semana.');
+  html += `<a class="abrir-seccion" href="#proximas">Ver todas las tareas próximas</a>`;
   if (porRevisar.length) html += `<h2 class="titulo-seccion">Por revisar<span class="cuenta">${porRevisar.length}</span></h2>` + listaTareas(porRevisar, true, '');
   html += `<h2 class="titulo-seccion">Por cargo</h2>` + botonesCargos();
 
   const faltan = faltanFechasClave();
   if (faltan.length) html += `<h2 class="titulo-seccion">Fechas clave sin definir</h2>
     <div class="vacio">${faltan.map(k => esc(etiquetaEvento(k))).join(', ')}. Agrégalas en Ajustes para que se calculen sus tareas.</div>`;
+  vista.innerHTML = html;
+}
+
+function botonOmitir(donde, lista, texto) {
+  const n = lista.filter(omitible).length;
+  return n ? `<button type="button" class="mini" data-omitir="${donde}" style="margin:0 0 8px">${texto} (${n})</button>` : '';
+}
+
+/* ---------- Próximas: todo lo que viene, aunque falte mucho ---------- */
+let filtroProx = { cargo: '' };
+function vistaProximas() {
+  const lista = tareasActivas().filter(t => ['semana', 'mes', 'futura'].includes(situacion(t).clase) && (!filtroProx.cargo || t.cargo === filtroProx.cargo)).sort(ordenarPorFecha);
+  let html = cabecera('Próximas', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', lista.length + (lista.length === 1 ? ' TAREA CON FECHA' : ' TAREAS CON FECHA'));
+  html += `<select class="buscador" id="filtroProxCargo"><option value="">Todos los cargos</option>${cargosOrden().map(c => `<option value="${c.id}" ${filtroProx.cargo === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select>
+    <p class="ayuda" style="margin:8px 2px 0">Todas las tareas con fecha desde hoy, aunque falte mucho. Ábrelas para marcarlas por adelantado. Las atrasadas están en Inicio.</p>`;
+  if (!lista.length) html += '<div class="vacio" style="margin-top:12px">No hay tareas próximas con fecha.</div>';
+  let mes = '';
+  lista.forEach(t => {
+    const f = situacion(t).fecha, m = f.slice(0, 7);
+    if (m !== mes) { mes = m; const nombre = MESES[Number(m.slice(5)) - 1]; html += `<div class="titulo-mes">${nombre.charAt(0).toUpperCase() + nombre.slice(1)} de ${m.slice(0, 4)}</div>`; }
+    html += tarjetaTarea(t, true);
+  });
+  html += `<a class="abrir-seccion" href="#inicio">Volver al inicio</a>`;
   vista.innerHTML = html;
 }
 
@@ -850,7 +877,7 @@ function renglonTarea(t) {
   if (s.clase === 'vencida') { f = 'Venció ' + fechaLarga(s.fecha); cls = 'rojo'; }
   else if (s.clase === 'semana') { f = s.dias === 0 ? 'Hoy' : s.dias === 1 ? 'Mañana' : fechaLarga(s.fecha); cls = 'ambar'; }
   else if (s.clase === 'mes' || s.clase === 'futura') f = fechaLarga(s.fecha);
-  else if (s.clase === 'hecha') { f = 'Hecho'; cls = 'verde'; }
+  else if (s.clase === 'hecha') { f = s.omitida ? 'Omitida' : 'Hecho'; cls = s.omitida ? 'ambar' : 'verde'; }
   else if (s.clase === 'sinfecha') f = 'Sin fecha';
   else if (s.revisar) { f = 'Por revisar'; cls = 'ambar'; }
   if (t.oculta) { f = 'Oculta'; cls = ''; }
@@ -879,6 +906,7 @@ function vistaCargos() {
         </div>
       </summary>
       <div class="cuerpo">
+        ${botonOmitir('cargo:' + c.id, conFecha, 'Omitir las atrasadas de este cargo')}
         ${bloqueLista('Con fecha', conFecha)}
         ${bloqueLista('Falta ponerles fecha', mias.filter(t => clase(t) === 'sinfecha'))}
         ${bloqueLista('Cuando ocurra', mias.filter(t => t.tipo === 'evento'))}
@@ -908,7 +936,7 @@ function vistaCargo(id) {
 
   let html = cabecera(c.nombre, 'CONGREGACIÓN CHICHICAXTLE', c.color, (etiquetaPersonas(c) || (cfgCargo(c).especial === 'rota' ? 'SE TURNA CADA SEMANA' : 'SIN ASIGNAR')).toUpperCase());
   html += bloqueResponsables(c);
-  html += `<h2 class="titulo-seccion">Con fecha<span class="cuenta">${conFecha.length}</span></h2>` + listaTareas(conFecha, false, 'Sin tareas con fecha.');
+  html += `<h2 class="titulo-seccion">Con fecha<span class="cuenta">${conFecha.length}</span></h2>` + botonOmitir('cargo:' + id, conFecha, 'Omitir las atrasadas de este cargo') + listaTareas(conFecha, false, 'Sin tareas con fecha.');
   if (sinFecha.length) html += `<h2 class="titulo-seccion">Falta ponerles fecha<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '');
   if (eventos.length) html += `<h2 class="titulo-seccion">Cuando ocurra<span class="cuenta">${eventos.length}</span></h2>` + listaTareas(eventos, false, '');
   if (perm.length) html += `<h2 class="titulo-seccion">Responsabilidades permanentes</h2>` +
@@ -1215,7 +1243,7 @@ function pintarTarea(t) {
       <label class="campo"><span>Estado</span><select name="estado">
         <option value="pendiente" ${t.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
         <option value="proceso" ${t.estado === 'proceso' ? 'selected' : ''}>En proceso</option>
-        <option value="hecho" ${s.hecha ? 'selected' : ''}>Hecho</option></select></label>
+        <option value="hecho" ${s.hecha ? 'selected' : ''}>${s.omitida ? 'Omitida' : 'Hecho'}</option></select></label>
       <div class="campo"><span>Recordatorio</span>${selectorFechaHora('recordatorio', t.recordatorio)}</div>
     </div>` : ''}
     <details class="campo"><summary style="font-size:12.5px;font-weight:600;color:var(--gris);cursor:pointer">Editar cita y formularios</summary>
@@ -1230,6 +1258,7 @@ function pintarTarea(t) {
     <div class="acciones">
       <button class="boton" type="submit">Guardar</button>
       ${!tareaEditando.nueva && t.tipo !== 'permanente' && !s.hecha ? `<button class="boton verde" type="button" id="btnHecho">${t.tipo === 'evento' ? 'Registrar que se atendió' : 'Marcar como hecho'}</button>` : ''}
+      ${!tareaEditando.nueva && omitible(t) ? '<button class="boton sec" type="button" id="btnOmitir">Omitir esta vez</button>' : ''}
       ${!tareaEditando.nueva && t.tipo === 'permanente' && t.revisarCada ? '<button class="boton verde" type="button" id="btnRevisado">Ya lo revisé</button>' : ''}
       ${!tareaEditando.nueva ? '<button class="boton sec" type="button" id="btnRegistrar">Solo registrar</button>' : ''}
       ${!tareaEditando.nueva ? `<button class="boton sec" type="button" id="btnOcultar">${t.oculta ? 'Volver a mostrar' : 'Ocultar de los pendientes'}</button>` : ''}
@@ -1275,7 +1304,7 @@ function leerFormTarea(form) {
     if (est === 'hecho' && !situacion(t).hecha) { completar(t, false); }
     else if (est !== 'hecho') {
       t.estado = est;
-      if (t.tipo === 'relativa') t.hechoPara = null;
+      if (t.tipo === 'relativa') { t.hechoPara = null; t.omitidoPara = null; }
     }
   }
 }
@@ -1390,6 +1419,28 @@ function completar(t, conToast = true, fecha, nota) {
   }
 }
 
+/* Omitir: la tarea atrasada no se hizo y no se marca como hecha. Las que se repiten pasan a su siguiente fecha;
+   las ligadas a una fecha clave esperan al siguiente evento. Queda "Omitida" en el historial. */
+const omitible = (t) => situacion(t).clase === 'vencida' && (esRecurrente(t) || t.tipo === 'relativa');
+function omitir(t) {
+  if (!omitible(t)) return false;
+  agregarEntrada(t, hoyISO(), 'Omitida');
+  t.historial[t.historial.length - 1].omitida = true;
+  if (t.tipo === 'relativa') t.omitidoPara = baseEvento(t);
+  else t.proxima = siguienteFecha(t);
+  t.estado = 'pendiente'; t.recordatorio = '';
+  marcarCambio('tareas', t);
+  return true;
+}
+function omitirVarias(lista, donde) {
+  const vencidas = lista.filter(t => situacion(t).clase === 'vencida'), lote = vencidas.filter(omitible), otras = vencidas.length - lote.length;
+  if (!lote.length) return toast('No hay atrasadas que se puedan omitir');
+  const msg = '¿Omitir ' + lote.length + (lote.length === 1 ? ' tarea atrasada' : ' tareas atrasadas') + donde + '?\n\nNo se marcan como hechas: las que se repiten pasan a su siguiente fecha, las ligadas a un evento esperan al siguiente, y en el historial queda "Omitida".' + (otras ? '\n\n' + otras + ' atrasada(s) de otro tipo no se tocan.' : '');
+  if (!confirm(msg)) return;
+  lote.forEach(omitir);
+  render(); toast(lote.length === 1 ? 'Tarea omitida' : lote.length + ' tareas omitidas');
+}
+
 hoja.addEventListener('change', (e) => {
   if (e.target.name === 'evento' && tareaEditando && $('#formTarea')) {
     const fd = new FormData($('#formTarea'));
@@ -1472,6 +1523,11 @@ hoja.addEventListener('click', (e) => {
     marcarCambio('tareas', tareaEditando.t);
     cerrarHoja(); render();
   }
+  if (id === 'btnOmitir' && tareaEditando) {
+    leerFormTarea($('#formTarea'));
+    const t = tareaEditando.t;
+    if (omitir(t)) { cerrarHoja(); render(); toast(t.tipo === 'relativa' ? 'Omitida hasta el siguiente evento' : 'Omitida. Próxima: ' + fechaLarga(t.proxima)); }
+  }
   if (id === 'btnBorrar' && tareaEditando && confirm('¿Eliminar esta tarea?')) {
     tareaEditando.t.borrado = true;
     marcarCambio('tareas', tareaEditando.t);
@@ -1529,8 +1585,14 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
+  if (b.dataset.omitir) {
+    const que = b.dataset.omitir;
+    if (que === 'todas') return omitirVarias(tareasActivas(), ' de todos los cargos');
+    const c = cargoPorId(que.slice(6));
+    return omitirVarias(tareasActivas().filter(t => t.cargo === c.id), ' de ' + c.nombre);
+  }
   if (b.dataset.vistaHist) { filtroHist.vista = b.dataset.vistaHist; return render(); }
   if (b.dataset.temaModo) { guardarTema(b.dataset.temaModo); return render(); }
   if (b.dataset.h) { const [tipo, rid, idx, ctx] = b.dataset.h.split('|'); return abrirEntrada(tipo, rid, Number(idx), ctx); }
@@ -1664,6 +1726,7 @@ vista.addEventListener('change', (e) => {
     editarPuesto(c, pc, g => { if (v) g.auxPorPersona[idPersona] = v; else delete g.auxPorPersona[idPersona]; });
     render(); toast('Guardado');
   }
+  if (e.target.id === 'filtroProxCargo') { filtroProx.cargo = e.target.value; render(); }
   if (e.target.id === 'filtroHistCargo') { filtroHist.cargo = e.target.value; render(); }
   if (e.target.id === 'chkOmitidas') { filtroHist.omitidas = e.target.checked; render(); }
   if (e.target.id === 'archivo' && e.target.files[0]) importar(e.target.files[0]);
@@ -1924,10 +1987,11 @@ function render() {
   const h = (location.hash || '#inicio').slice(1);
   const [ruta, param] = h.split('/');
   document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('activo',
-    a.dataset.r === ruta || (ruta === 'cargo' && a.dataset.r === 'cargos')));
+    a.dataset.r === ruta || (ruta === 'cargo' && a.dataset.r === 'cargos') || (ruta === 'proximas' && a.dataset.r === 'inicio')));
   if (ruta === 'cargos') vistaCargos();
   else if (ruta === 'cargo' && param) vistaCargo(param);
   else if (ruta === 'necesidades') vistaNecesidades(param);
+  else if (ruta === 'proximas') vistaProximas();
   else if (ruta === 'historial') vistaHistorial();
   else if (ruta === 'formularios') vistaFormularios();
   else if (ruta === 'ajustes') vistaAjustes();
