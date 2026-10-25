@@ -271,6 +271,12 @@ aplicarTema();
   .acordeon.ajc > summary .persona.sin { font-weight: 700; opacity: 1; }
   .acordeon.ajc .cuerpo { padding-top: 0; }
   .clave-oculta { -webkit-text-security: disc; text-security: disc; }
+  .rec-pub { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--linea); }
+  .rec-pub:last-child { border-bottom: none; }
+  .rec-pub .renglon { flex: 1; border-bottom: none; }
+  .fila-ficha { border: 1px solid var(--linea); border-radius: 8px; padding: 10px 10px 4px; margin-bottom: 8px; background: var(--caja); }
+  .fila-ficha .acciones-fila { display: flex; gap: 8px; margin: 0 0 8px; }
+  .ficha-tit { display: block; font-size: 12.5px; font-weight: 700; color: var(--gris); margin: 14px 0 6px; }
 
   /* Hoja modal */
   .velo { position: fixed; inset: 0; background: rgba(20,24,32,.45); z-index: 40; display: none; }
@@ -831,6 +837,8 @@ function vistaInicio() {
   </div>`;
 
   if (recordatorios.length) html += `<h2 class="titulo-seccion">Recordatorios<span class="cuenta">${recordatorios.length}</span></h2>` + listaTareas(recordatorios, true, '');
+  const recPub = recordatoriosPub().filter(x => x.aviso);
+  if (recPub.length) html += `<h2 class="titulo-seccion">Recordatorios de hermanos<span class="cuenta">${recPub.length}</span></h2><div class="panel" style="padding:2px 12px">${recPub.map(renglonRecPub).join('')}</div>`;
   html += `<h2 class="titulo-seccion">Atrasadas<span class="cuenta">${vencidas.length}</span></h2>` + botonOmitir('todas', vencidas, 'Omitir todas las atrasadas') + listaTareas(vencidas, true, 'Nada atrasado.');
   html += `<h2 class="titulo-seccion">Próximos 7 días<span class="cuenta">${semana.length}</span></h2>` + listaTareas(semana, true, 'Nada para esta semana.');
   html += `<a class="abrir-seccion" href="#proximas">Ver todas las tareas próximas</a>`;
@@ -862,6 +870,8 @@ function vistaProximas() {
     if (m !== mes) { mes = m; const nombre = MESES[Number(m.slice(5)) - 1]; html += `<div class="titulo-mes">${nombre.charAt(0).toUpperCase() + nombre.slice(1)} de ${m.slice(0, 4)}</div>`; }
     html += tarjetaTarea(t, true);
   });
+  const recs = filtroProx.cargo ? [] : recordatoriosPub().filter(x => diasHasta(x.r.fecha) >= 0);
+  if (recs.length) html += `<h2 class="titulo-seccion">Recordatorios de hermanos<span class="cuenta">${recs.length}</span></h2><div class="panel" style="padding:2px 12px">${recs.map(renglonRecPub).join('')}</div>`;
   html += `<a class="abrir-seccion" href="#inicio">Volver al inicio</a>`;
   vista.innerHTML = html;
 }
@@ -958,6 +968,88 @@ function vistaCargo(id) {
   vista.innerHTML = html;
 }
 
+/* ---------- Ficha del hermano: datos permanentes y recordatorios con fecha ---------- */
+const ANTELACIONES = [[0, 'El mismo día'], [3, '3 días antes'], [7, '1 semana antes'], [14, '2 semanas antes'], [30, '1 mes antes']];
+function recordatoriosPub() {
+  const hoy = hoyISO();
+  return pubsActivos().flatMap(p => (p.recordatorios || []).filter(r => r.fecha).map(r => ({ p, r, aviso: sumarDias(r.fecha, -(r.antes ?? 7)) <= hoy })))
+    .sort((a, b) => a.r.fecha.localeCompare(b.r.fecha));
+}
+function cuandoRec(r) {
+  const d = diasHasta(r.fecha);
+  if (d < 0) return { txt: 'Venció el ' + fechaLarga(r.fecha), cls: 'rojo' };
+  if (d === 0) return { txt: 'Hoy', cls: 'ambar' };
+  if (d === 1) return { txt: 'Mañana', cls: 'ambar' };
+  if (d <= 7) return { txt: 'En ' + d + ' días', cls: 'ambar' };
+  return { txt: fechaLarga(r.fecha), cls: '' };
+}
+function renglonRecPub({ p, r }) {
+  const c = cuandoRec(r);
+  return `<div class="rec-pub"><button class="renglon" data-ficha="${p.id}"><span class="t"><b>${esc(nombreCorto(p))}</b>${r.texto ? ': ' + esc(r.texto) : ''}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
+    <button type="button" class="mini" data-rec-hecho="${p.id}|${r.id}">Hecho</button></div>`;
+}
+function recHecho(p, rid) {
+  const r = (p.recordatorios || []).find(x => x.id === rid);
+  if (!r) return '';
+  agregarEntrada(p, hoyISO(), 'Recordatorio: ' + (r.texto || fechaLarga(r.fecha)));
+  let aviso = '';
+  if (r.anual) { do { r.fecha = sumarMeses(r.fecha, 12); } while (r.fecha <= hoyISO()); aviso = ' Se repite el ' + fechaLarga(r.fecha) + '.'; }
+  else p.recordatorios = p.recordatorios.filter(x => x.id !== rid);
+  if (!p.recordatorios.length) delete p.recordatorios;
+  marcarCambio('publicadores', p);
+  return 'Recordatorio hecho.' + aviso;
+}
+function filaDato(d) {
+  return `<div class="fila-ficha" data-fd>
+    <label class="campo"><span>Título</span><input data-f="titulo" value="${esc(d.titulo || '')}" placeholder="Ej. Trabajo, Salud de su familia, Transporte"></label>
+    <label class="campo"><span>Dato</span><textarea data-f="texto">${esc(d.texto || '')}</textarea></label>
+    <div class="acciones-fila"><button type="button" class="mini" data-quitar-fila>Quitar</button></div></div>`;
+}
+function filaRec(r) {
+  const antes = r.antes ?? 7;
+  return `<div class="fila-ficha" data-fr="${r.id}">
+    <div class="campo"><span>Fecha</span>${selectorFecha('rf_' + r.id, r.fecha)}</div>
+    <label class="campo"><span>Qué recordar</span><input data-f="texto" value="${esc(r.texto || '')}"></label>
+    <label class="campo"><span>Mostrar en Inicio</span><select data-f="antes">${ANTELACIONES.map(([n, l]) => `<option value="${n}" ${n === antes ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+    <label class="chk-pasada"><input type="checkbox" data-f="anual" ${r.anual ? 'checked' : ''}> Repetir cada año</label>
+    <div class="acciones-fila" style="margin-top:8px"><button type="button" class="mini" data-rec-hecho-f="${r.id}">Hecho</button><button type="button" class="mini" data-quitar-fila>Quitar</button></div></div>`;
+}
+const nuevoRecId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+let fichaEd = null;
+function abrirFicha(id) {
+  const p = pubPorId(id); if (!p) return;
+  fichaEd = { p };
+  abrirHoja(`<h3>Ficha</h3><div style="font-weight:600;font-size:14.5px;margin-bottom:2px">${esc(p.nombre)}</div>
+  <form id="formFicha">
+    <span class="ficha-tit">Datos permanentes</span>
+    <div id="listaDatos">${(p.datos || []).map(filaDato).join('')}</div>
+    <button type="button" class="mini" data-add-dato>+ Agregar dato</button>
+    <span class="ficha-tit">Recordatorios</span>
+    <div id="listaRecs">${(p.recordatorios || []).map(filaRec).join('')}</div>
+    <button type="button" class="mini" data-add-rec>+ Agregar recordatorio</button>
+    <p class="ayuda" style="margin:8px 0 0">Un recordatorio aparece en Inicio con la anticipación que elijas y se avisa al abrir la app. Se queda ahí hasta que lo marques como hecho.</p>
+    <div class="acciones" style="margin-top:14px">
+      <button class="boton" type="submit">Guardar</button>
+      <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
+    </div>
+  </form>`);
+}
+/* Lee lo que hay en pantalla y lo pasa al hermano. Con exigir, un recordatorio sin fecha no se guarda. */
+function leerFicha(exigir) {
+  const p = fichaEd.p, f = $('#formFicha');
+  const v = (fila, k) => { const x = fila.querySelector(`[data-f="${k}"]`); return x ? x.value.trim() : ''; };
+  const datos = [...f.querySelectorAll('[data-fd]')].map(fila => ({ titulo: v(fila, 'titulo'), texto: v(fila, 'texto') })).filter(d => d.titulo || d.texto);
+  const recs = [...f.querySelectorAll('[data-fr]')].map(fila => ({
+    id: fila.dataset.fr, fecha: fila.querySelector('input[type=hidden]').value, texto: v(fila, 'texto'),
+    antes: Number(v(fila, 'antes')) || 0, anual: fila.querySelector('[data-f="anual"]').checked
+  })).filter(r => r.fecha || r.texto);
+  if (exigir && recs.some(r => !r.fecha)) { toast('A un recordatorio le falta la fecha'); return false; }
+  if (datos.length) p.datos = datos; else delete p.datos;
+  if (recs.length) p.recordatorios = recs; else delete p.recordatorios;
+  marcarCambio('publicadores', p);
+  return true;
+}
+
 /* ---------- Necesidades ---------- */
 let filtroNec = { grupo: '1', ver: 'todos', q: '' };
 function vistaNecesidades(grupo) {
@@ -969,7 +1061,7 @@ function vistaNecesidades(grupo) {
   if (filtroNec.ver === 'atendido') lista = lista.filter(p => p.estado === 'atendido');
   if (filtroNec.q) {
     const q = normal(filtroNec.q);
-    lista = lista.filter(p => normal(p.nombre + ' ' + (p.apodo || '') + ' ' + (p.necesidad || '')).includes(q));
+    lista = lista.filter(p => normal(p.nombre + ' ' + (p.apodo || '') + ' ' + (p.necesidad || '') + ' ' + (p.datos || []).map(d => d.titulo + ' ' + d.texto).join(' ')).includes(q));
   }
   const pend = pubsActivos().filter(p => p.estado === 'pendiente');
   let html = cabecera('Necesidades de los publicadores', 'CONGREGACIÓN CHICHICAXTLE', 'var(--morado)', pend.length + ' POR ATENDER');
@@ -979,7 +1071,7 @@ function vistaNecesidades(grupo) {
   }).join('')}</div>
   <div class="segmentos" style="margin-top:8px">${[['todos', 'Todos'], ['pendiente', 'Por atender'], ['atendido', 'Atendidos']].map(([k, l]) =>
     `<button class="segmento ${filtroNec.ver === k ? 'activo' : ''}" style="--c:${color}" data-ver="${k}">${l}</button>`).join('')}</div>
-  <input class="buscador" type="search" placeholder="Buscar nombre, apodo o necesidad" value="${esc(filtroNec.q)}" id="buscarNec">`;
+  <input class="buscador" type="search" placeholder="Buscar nombre, apodo, necesidad o dato" value="${esc(filtroNec.q)}" id="buscarNec">`;
   html += `<div class="lista" style="margin-top:12px">${lista.map(tarjetaPub).join('') || '<div class="vacio">No hay hermanos con este filtro.</div>'}</div>`;
   html += `<button class="boton-agregar" data-nuevo-pub="${g}">+ Agregar hermano al grupo ${g}</button>`;
   vista.innerHTML = html;
@@ -998,7 +1090,8 @@ function tarjetaPub(p) {
       <button class="mini ${p.estado === 'pendiente' ? 'on-pendiente' : ''}" data-est="pendiente" data-id="${p.id}">Por atender</button>
       <button class="mini ${p.estado === 'atendido' ? 'on-atendido' : ''}" data-est="atendido" data-id="${p.id}">Atendido</button>
       ${p.estado === 'atendido' && p.atendido ? `<span class="fecha-atendido">el ${fechaLarga(p.atendido)}</span>` : ''}
-      <button class="mini" data-hist-pub="${p.id}" style="margin-left:auto">Historial${(p.historial || []).length ? ' (' + p.historial.length + ')' : ''}</button>
+      <button class="mini" data-ficha="${p.id}" style="margin-left:auto">Ficha${(p.datos || []).length + (p.recordatorios || []).length ? ' (' + ((p.datos || []).length + (p.recordatorios || []).length) + ')' : ''}</button>
+      <button class="mini" data-hist-pub="${p.id}">Historial${(p.historial || []).length ? ' (' + p.historial.length + ')' : ''}</button>
     </div>
   </div>`;
 }
@@ -1504,6 +1597,7 @@ hoja.addEventListener('submit', (e) => {
     cerrarHoja(); render(); toast('Guardado');
   }
   if (e.target.id === 'formPub') guardarPubForm(e.target);
+  if (e.target.id === 'formFicha' && fichaEd && leerFicha(true)) { cerrarHoja(); render(); toast('Guardado'); }
   if (e.target.id === 'formEntrada' && entradaEd) {
     const reg = regPorTipo(entradaEd.tipo, entradaEd.id), fd = new FormData(e.target);
     if (!fd.get('fecha')) return toast('Elige el día, el mes y el año');
@@ -1516,6 +1610,14 @@ hoja.addEventListener('submit', (e) => {
 });
 hoja.addEventListener('click', (e) => {
   const id = e.target.id;
+  if (e.target.closest('[data-add-dato]')) return $('#listaDatos').insertAdjacentHTML('beforeend', filaDato({}));
+  if (e.target.closest('[data-add-rec]')) return $('#listaRecs').insertAdjacentHTML('beforeend', filaRec({ id: nuevoRecId() }));
+  if (e.target.closest('[data-quitar-fila]')) return e.target.closest('.fila-ficha').remove();
+  const rf = e.target.closest('[data-rec-hecho-f]');
+  if (rf && fichaEd) {
+    if (!leerFicha(true)) return;
+    const m = recHecho(fichaEd.p, rf.dataset.recHechoF); abrirFicha(fichaEd.p.id); render(); return toast(m || 'Guarda primero el recordatorio');
+  }
   const fb = e.target.closest('[data-form]');
   if (fb) return abrirForm(fb.dataset.form);
   const tb = e.target.closest('[data-abrir-tarea]');
@@ -1627,8 +1729,14 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-ficha],[data-rec-hecho],[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
+  if (b.dataset.ficha) return abrirFicha(b.dataset.ficha);
+  if (b.dataset.recHecho) {
+    const [pid, rid] = b.dataset.recHecho.split('|'), p = pubPorId(pid);
+    if (p) { const m = recHecho(p, rid); render(); toast(m); }
+    return;
+  }
   if (b.dataset.ajfaltan) { ajCargos.faltan = !ajCargos.faltan; return render(); }
   if (b.dataset.omitir) {
     const que = b.dataset.omitir;
@@ -2053,6 +2161,7 @@ function toast(msg) {
 /* ================= Inicio ================= */
 normalizar(); guardarLocal(); renovarVencidas();
 render();
+{ const n = recordatoriosPub().filter(x => x.aviso).length; if (n) toast(n === 1 ? 'Tienes 1 recordatorio de un hermano' : 'Tienes ' + n + ' recordatorios de hermanos'); }
 revisarRecordatorios();
 sincronizar(false);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
