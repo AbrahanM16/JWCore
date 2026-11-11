@@ -140,7 +140,7 @@ aplicarTema();
   .hero-pie b { color: var(--lema); font-size: 14px; }
 
   /* Superficies de vidrio */
-  .panel, .lista, .vacio, .resp, .tarjeta-form, .pub, .acordeon, .boton-seccion, details.hist-cargo > summary, .tarea {
+  .panel, .lista, .vacio, .resp, .tarjeta-form, .pub, .acordeon, details.hist-cargo > summary, .tarea {
     background: var(--panel); box-shadow: var(--vidrio), var(--sombra);
   }
   .panel { border-radius: 26px; padding: 16px; }
@@ -158,13 +158,6 @@ aplicarTema();
   }
 
   /* Botones de cargos en Inicio */
-  .secciones { display: grid; grid-template-columns: 1fr; gap: 10px; }
-  @media (min-width: 560px) { .secciones { grid-template-columns: 1fr 1fr; } }
-  .boton-seccion { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border-radius: 22px; padding: 12px 14px; transition: transform .3s var(--curva); }
-  .boton-seccion:active { transform: scale(.98); }
-  .boton-seccion > div { flex: 1; min-width: 0; }
-  .boton-seccion .nombre { font-weight: 600; font-size: 14.5px; line-height: 1.3; }
-  .boton-seccion .persona { font-size: 12.5px; color: var(--gris-suave); }
   .contador { min-width: 26px; text-align: center; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--chip-bg); color: var(--gris); }
   .contador.alerta { background: var(--rojo-bg); color: var(--rojo-t); }
 
@@ -457,6 +450,10 @@ aplicarTema();
   .nota-pub b { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--dorado-t); }
   .nota-pub span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; white-space: pre-line; }
   .grupo-lista { padding-left: 6px; }
+  .meta-rec { display: block; margin-top: 2px; font-size: 12px; color: var(--gris); }
+  div.segmento.seg-envuelve { display: flex; flex-wrap: wrap; border-radius: 20px; }
+  div.segmento.seg-envuelve > button { flex: 1 1 auto; white-space: nowrap; padding: 0 12px; }
+  .chip-quitar { cursor: pointer; }
   .mini.peligro { background: var(--rojo-bg); color: var(--rojo-t); box-shadow: none; }
 
   /* Totales de la congregación en Necesidades */
@@ -747,22 +744,6 @@ function situacion(t) {
   return { clase: d < 0 ? 'vencida' : d <= 7 ? 'semana' : d <= 30 ? 'mes' : 'futura', fecha, dias: d };
 }
 
-function describirRepeticion(t) {
-  switch (t.tipo) {
-    case 'semanal': return 'Cada ' + DIAS_SEM[t.dow ?? 1];
-    case 'mensual': return 'Cada mes, día ' + (t.dia || 1);
-    case 'anual': return 'Cada año, ' + (t.dia || 1) + ' de ' + MESES[(t.mes || 1) - 1];
-    case 'intervalo': return t.meses ? (t.meses === 12 ? 'Cada año' : t.meses % 12 === 0 ? 'Cada ' + t.meses / 12 + ' años' : 'Cada ' + t.meses + ' meses') : 'Sin periodicidad fija';
-    case 'relativa': {
-      const n = t.dias || 0;
-      const txt = n === 0 ? 'El día de' : Math.abs(n) + (Math.abs(n) === 1 ? ' día ' : ' días ') + (n < 0 ? 'antes de' : 'después de');
-      return txt + ': ' + etiquetaEvento(t.evento) + (EVENTOS_RANGO[t.evento] ? (anclaDe(t) === 'fin' ? ' (desde el final)' : ' (desde el inicio)') : '');
-    }
-    case 'unica': return 'Una sola vez';
-    default: return TIPOS[t.tipo] || '';
-  }
-}
-
 /* ================= Consultas ================= */
 const tareasTodas = () => DB.tareas.filter(t => !t.borrado);
 const tareasActivas = () => tareasTodas().filter(t => !t.oculta);
@@ -956,7 +937,8 @@ function ordenarPorFecha(a, b) {
 
 /* ---------- Inicio ---------- */
 function vistaInicio() {
-  const act = tareasActivas();
+  const act = tareasActivas().filter(t => t.cargo !== 'general');
+  const generales = tareasActivas().filter(t => t.cargo === 'general' && situacion(t).clase !== 'hecha').sort(ordenarPorFecha);
   const vencidas = act.filter(t => situacion(t).clase === 'vencida').sort(ordenarPorFecha);
   const semana = act.filter(t => situacion(t).clase === 'semana').sort(ordenarPorFecha);
   const mes = act.filter(t => situacion(t).clase === 'mes').sort(ordenarPorFecha);
@@ -992,6 +974,7 @@ function vistaInicio() {
     `<a class="abrir-seccion" href="#proximas">Ver todas las tareas próximas</a>` +
     (porRevisar.length ? `<h2 class="titulo-seccion">Por revisar<span class="cuenta">${porRevisar.length}</span></h2>` + listaTareas(porRevisar, true, '') : '');
   html += `<button class="boton-agregar" data-nueva="general">+ Agregar pendiente general</button>`;
+  if (generales.length) html += `<h2 class="titulo-seccion">Pendientes generales<span class="cuenta">${generales.length}</span></h2>` + listaTareas(generales, false, '');
   html += `<div class="cols2"><div class="col">${colHermanos}</div><div class="col">${colTareas}</div></div>`;
 
   const faltan = faltanFechasClave();
@@ -1023,17 +1006,6 @@ function vistaProximas() {
   if (herm.length) html += `<h2 class="titulo-seccion">Hermanos<span class="cuenta">${herm.length}</span></h2>` + panelHermanos(herm);
   html += `<a class="abrir-seccion" href="#inicio">Volver al inicio</a>`;
   vista.innerHTML = html;
-}
-
-function botonesCargos() {
-  return `<div class="secciones">${cargosOrden().map(c => {
-    const n = conteoCargo(c.id);
-    return `<a class="boton-seccion" href="#cargo/${c.id}" style="--c:${c.color};text-decoration:none;color:inherit">
-      <span class="mono">${mono(c.nombre)}</span>
-      <div><div class="nombre">${esc(c.nombre)}</div>${etiquetaPersonas(c) ? `<div class="persona">${esc(etiquetaPersonas(c))}</div>` : ''}</div>
-      <span class="contador ${n.urg ? 'alerta' : ''}" title="Pendientes">${n.urg || n.pend}</span>
-    </a>`;
-  }).join('')}</div>`;
 }
 
 /* ---------- Cargos ---------- */
@@ -1109,7 +1081,7 @@ function vistaCargo(id) {
   let html = cabecera(c.nombre, 'CONGREGACIÓN CHICHICAXTLE', c.color, (etiquetaPersonas(c) || (cfgCargo(c).especial === 'rota' ? 'SE TURNA CADA SEMANA' : cfgCargo(c).sinResp ? 'PARA TODO EL CUERPO DE ANCIANOS' : 'SIN ASIGNAR')).toUpperCase());
   html += bloqueResponsables(c);
   const izq = `<h2 class="titulo-seccion">Con fecha<span class="cuenta">${conFecha.length}</span></h2>` + botonOmitir('cargo:' + id, conFecha, 'Omitir las atrasadas de este cargo') + listaTareas(conFecha, false, 'Sin tareas con fecha.') +
-    (sinFecha.length ? `<h2 class="titulo-seccion">Falta ponerles fecha<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '') : '');
+    (sinFecha.length ? `<h2 class="titulo-seccion">${cfgCargo(c).sinResp ? 'Sin fecha' : 'Falta ponerles fecha'}<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '') : '');
   let der = '';
   if (eventos.length) der += `<h2 class="titulo-seccion">Cuando ocurra<span class="cuenta">${eventos.length}</span></h2>` + listaTareas(eventos, false, '');
   if (perm.length) der += `<h2 class="titulo-seccion">Responsabilidades permanentes</h2>` +
@@ -1125,11 +1097,14 @@ function vistaCargo(id) {
 /* ---------- Hermanos: notas permanentes y recordatorios con prioridad ---------- */
 const PRIORIDADES = [['alta', 'Alta'], ['media', 'Media'], ['baja', 'Baja']];
 const ORDEN_PRIO = { alta: 0, media: 1, baja: 2 };
+const ATIENDE = [['cuerpo', 'Cuerpo de ancianos'], ['ambos', 'Abrahán y Yaky'], ['abrahan', 'Abrahán'], ['yaky', 'Yaky']];
+const textoAtiende = (k) => (ATIENDE.find(([v]) => v === k) || [])[1] || '';
+const nombresCon = (ids) => (ids || []).map(pubPorId).filter(Boolean).map(nombreCorto);
 const nuevoId = (pre) => pre + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-const recsAbiertos = (p) => (p.recordatorios || []).filter(r => r.fecha && !r.eliminado);
+const recsAbiertos = (p) => (p.recordatorios || []).filter(r => !r.eliminado);
 const prioDe = (r) => ORDEN_PRIO[r.prioridad] === undefined ? 'media' : r.prioridad;
-const ordenRec = (a, b) => ORDEN_PRIO[a.prio] - ORDEN_PRIO[b.prio] || (a.fecha + a.hora).localeCompare(b.fecha + b.hora);
-const itemRec = (p, r) => ({ p, r, fecha: r.fecha, hora: r.hora || '', texto: r.texto || '', prio: prioDe(r) });
+const ordenRec = (a, b) => ORDEN_PRIO[a.prio] - ORDEN_PRIO[b.prio] || ((a.fecha || '9999') + a.hora).localeCompare((b.fecha || '9999') + b.hora);
+const itemRec = (p, r) => ({ p, r, fecha: r.fecha, hora: r.hora || '', texto: r.texto || '', prio: prioDe(r), atiende: textoAtiende(r.atiende), con: nombresCon(r.con) });
 /* Todos los recordatorios abiertos de los hermanos, primero por prioridad y luego por fecha */
 function pendientesHermanos() {
   const l = [];
@@ -1137,6 +1112,7 @@ function pendientesHermanos() {
   return l.sort(ordenRec);
 }
 function cuandoFecha(fecha, hora) {
+  if (!fecha) return { txt: 'Sin fecha', cls: '' };
   const d = diasHasta(fecha), h = hora ? ', ' + hora : '';
   if (d < 0) return { txt: 'Venció el ' + fechaLarga(fecha), cls: 'rojo' };
   if (d === 0) return { txt: 'Hoy' + h, cls: 'ambar' };
@@ -1144,13 +1120,14 @@ function cuandoFecha(fecha, hora) {
   if (d <= 7) return { txt: 'En ' + d + ' días', cls: 'ambar' };
   return { txt: fechaLarga(fecha), cls: '' };
 }
-const grupoCuando = (fecha) => { const d = diasHasta(fecha); return d < 0 ? 'atrasados' : d === 0 ? 'hoy' : d <= 7 ? 'semana' : 'despues'; };
-const TIT_GRUPO = { atrasados: 'Atrasados', hoy: 'Para hoy', semana: 'Próximos 7 días', despues: 'Más adelante' };
+const grupoCuando = (fecha) => { if (!fecha) return 'sinfecha'; const d = diasHasta(fecha); return d < 0 ? 'atrasados' : d === 0 ? 'hoy' : d <= 7 ? 'semana' : 'despues'; };
+const TIT_GRUPO = { atrasados: 'Atrasados', hoy: 'Para hoy', semana: 'Próximos 7 días', sinfecha: 'Sin fecha', despues: 'Más adelante' };
 function renglonHermano(x, conNombre = true) {
   const c = cuandoFecha(x.fecha, x.hora);
   const txt = x.texto.length > 90 ? x.texto.slice(0, 88) + '…' : x.texto;
   const quien = conNombre ? `<b>${esc(nombreCorto(x.p))}</b>${txt ? ': ' : ''}` : '';
-  return `<div class="rec-pub"><button class="renglon" data-rec-editar="${x.p.id}|${x.r.id}"><span class="prio ${x.prio}" title="Prioridad ${x.prio}"></span><span class="t">${quien}${esc(txt)}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
+  const meta = [x.atiende ? 'Lo atiende: ' + x.atiende : '', x.con.length ? 'Con: ' + x.con.join(', ') : ''].filter(Boolean).join(' · ');
+  return `<div class="rec-pub"><button class="renglon" data-rec-editar="${x.p.id}|${x.r.id}"><span class="prio ${x.prio}" title="Prioridad ${x.prio}"></span><span class="t">${quien}${esc(txt)}${meta ? `<span class="meta-rec">${esc(meta)}</span>` : ''}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
     <button type="button" class="mini" data-rec-hecho="${x.p.id}|${x.r.id}">Hecho</button></div>`;
 }
 const panelHermanos = (l, conNombre = true) => `<div class="panel" style="padding:2px 12px">${l.map(x => renglonHermano(x, conNombre)).join('')}</div>`;
@@ -1160,7 +1137,7 @@ function bloqueHermanosInicio() {
   const herm = pendientesHermanos();
   if (!herm.length) return '';
   const g = (k) => herm.filter(x => grupoCuando(x.fecha) === k);
-  const cerca = ['atrasados', 'hoy', 'semana'].filter(k => g(k).length);
+  const cerca = ['atrasados', 'hoy', 'semana', 'sinfecha'].filter(k => g(k).length);
   let h = `<h2 class="titulo-seccion">Hermanos<span class="cuenta">${herm.length}</span></h2>`;
   if (!cerca.length) h += '<div class="vacio">Nada atrasado ni para esta semana.</div>';
   cerca.forEach(k => { h += `<div class="grupo-lista">${TIT_GRUPO[k]} (${g(k).length})</div>` + panelHermanos(g(k)); });
@@ -1174,14 +1151,17 @@ function abrirRec(pid, rid) {
   const p = pubPorId(pid); if (!p) return;
   const r = rid ? (p.recordatorios || []).find(x => x.id === rid) : { id: nuevoId('r'), fecha: '', texto: '', prioridad: 'media' };
   if (!r) return;
-  recEd = { p, r, nuevo: !rid, prio: prioDe(r) };
+  recEd = { p, r, nuevo: !rid, prio: prioDe(r), atiende: r.atiende || '', con: (r.con || []).filter(id => pubPorId(id)) };
   abrirHoja(`<h3>${rid ? 'Recordatorio' : 'Nuevo recordatorio'}</h3><div style="font-weight:600;font-size:14.5px;margin-bottom:10px">${esc(nombreCorto(p))}</div>
   <form id="formRec">
     <label class="campo"><span>Qué hay que recordar</span><textarea name="texto" placeholder="Visitarlo, llevarle algo, hablar con su familia...">${esc(r.texto || '')}</textarea></label>
-    <div class="campo"><span>Fecha</span>${selectorFecha('fecha', r.fecha)}</div>
+    <div class="campo"><span>Fecha (opcional)</span>${selectorFecha('fecha', r.fecha)}<div class="ayuda">Sin fecha queda como pendiente abierto en Inicio, hasta que lo marques como hecho.</div></div>
     <label class="campo"><span>Hora (opcional)</span><input type="time" name="hora" value="${esc(r.hora || '')}">
       <div class="ayuda">Con hora te llega un correo a esa hora. Sin hora, va en el resumen de las 9.</div></label>
     <div class="campo"><span>Prioridad</span><div class="segmento" style="margin:0">${PRIORIDADES.map(([k, l]) => `<button type="button" class="${recEd.prio === k ? 'on' : ''}" data-prio="${k}">${l}</button>`).join('')}</div></div>
+    <div class="campo"><span>Lo atiende</span><div class="segmento seg-envuelve" style="margin:0">${[['', 'Sin indicar'], ...ATIENDE].map(([k, l]) => `<button type="button" class="${recEd.atiende === k ? 'on' : ''}" data-atiende="${k}">${l}</button>`).join('')}</div></div>
+    <div class="campo"><span>Con otros hermanos (opcional)</span><div id="conRec">${bloqueConRec()}</div>
+      <div class="ayuda">Por ejemplo, familiares, para planear la visita o la ayuda junto con ellos. El recordatorio también se ve en su tarjeta.</div></div>
     <label class="chk-pasada"><input type="checkbox" name="anual" ${r.anual ? 'checked' : ''}> Repetir cada año</label>
     <div class="acciones" style="margin-top:14px">
       <button class="boton" type="submit">Guardar</button>
@@ -1190,14 +1170,23 @@ function abrirRec(pid, rid) {
     </div>
   </form>`);
 }
+/* Hermanos relacionados con el recordatorio: los elegidos y un menú con los demás, por grupo */
+function bloqueConRec() {
+  const elegidos = recEd.con.map(pubPorId).filter(Boolean);
+  const resto = pubsActivos().filter(x => x.id !== recEd.p.id && !recEd.con.includes(x.id)).sort(porNombre);
+  const grupos = [1, 2, 3, 4].map(n => [n, resto.filter(x => x.grupo === n)]).filter(([, l]) => l.length);
+  return `${elegidos.length ? `<div class="auto-lista" style="margin-bottom:8px">${elegidos.map(x => `<button type="button" class="chip chip-quitar" data-con-quitar="${x.id}">${esc(nombreCorto(x))} ✕</button>`).join('')}</div>` : ''}
+    <select id="conAgregar"><option value="">Agregar hermano...</option>${grupos.map(([n, l]) => `<optgroup label="Grupo ${n}">${l.map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+}
 function guardarRec(form) {
   const f = new FormData(form), { p, r } = recEd;
   const fecha = f.get('fecha'), texto = (f.get('texto') || '').trim(), hora = (f.get('hora') || '').trim();
   if (!texto) { toast('Escribe qué hay que recordar'); return false; }
-  if (!fecha) { toast('Elige el día, el mes y el año'); return false; }
-  r.texto = texto; r.fecha = fecha; r.prioridad = recEd.prio;
-  if (hora) r.hora = hora; else delete r.hora;
-  if (f.get('anual')) r.anual = true; else delete r.anual;
+  r.texto = texto; r.fecha = fecha || ''; r.prioridad = recEd.prio;
+  if (hora && fecha) r.hora = hora; else delete r.hora;
+  if (f.get('anual') && fecha) r.anual = true; else delete r.anual;
+  if (recEd.atiende) r.atiende = recEd.atiende; else delete r.atiende;
+  if (recEd.con.length) r.con = recEd.con.slice(); else delete r.con;
   if (recEd.nuevo) (p.recordatorios = p.recordatorios || []).push(r);
   marcarCambio('publicadores', p);
   return true;
@@ -1323,6 +1312,7 @@ function normal(s) { return String(s).toLowerCase().normalize('NFD').replace(/[�
 function tarjetaPub(p) {
   const tieneApodo = p.apodo && p.apodo.trim();
   const recs = recsAbiertos(p).map(r => itemRec(p, r)).sort(ordenRec);
+  const deOtros = pubsActivos().filter(o => o.id !== p.id).flatMap(o => recsAbiertos(o).filter(r => (r.con || []).includes(p.id)).map(r => itemRec(o, r))).sort(ordenRec);
   const notas = (p.notas || []).filter(n => n.titulo || n.texto);
   const reg = (p.historial || []).length;
   return `<div class="pub" data-pub="${p.id}">
@@ -1333,6 +1323,7 @@ function tarjetaPub(p) {
     </div>
     ${notas.length ? `<div class="notas-pub">${notas.map(n => `<button type="button" class="nota-pub" data-notas="${p.id}">${n.titulo ? `<b>${esc(n.titulo)}</b>` : ''}<span>${esc(n.texto)}</span></button>`).join('')}</div>` : ''}
     ${recs.length ? `<div class="recs-pub">${recs.map(x => renglonHermano(x, false)).join('')}</div>` : ''}
+    ${deOtros.length ? `<div class="recs-pub de-otros"><div class="grupo-lista" style="padding:8px 0 0">También aparece en</div>${deOtros.map(x => renglonHermano(x, true)).join('')}</div>` : ''}
     <div class="pub-pie">
       <button type="button" class="mini" data-rec-nuevo="${p.id}">+ Recordatorio</button>
       <button type="button" class="mini" data-notas="${p.id}">${notas.length ? 'Notas (' + notas.length + ')' : '+ Notas'}</button>
@@ -1918,6 +1909,7 @@ function omitirVarias(lista, donde) {
 }
 
 hoja.addEventListener('change', (e) => {
+  if (e.target.id === 'conAgregar' && recEd && e.target.value) { recEd.con.push(e.target.value); $('#conRec').innerHTML = bloqueConRec(); return; }
   if (e.target.name === 'evento' && tareaEditando && $('#formTarea')) {
     const fd = new FormData($('#formTarea'));
     const t = Object.assign({}, tareaEditando.t, { tipo: 'relativa', evento: e.target.value, dias: Number(fd.get('dias')) || 0, ancla: fd.get('ancla') || undefined });
@@ -1955,6 +1947,10 @@ hoja.addEventListener('click', (e) => {
   const id = e.target.id;
   if (e.target.closest('[data-add-nota]')) return $('#listaNotas').insertAdjacentHTML('beforeend', filaNota({}));
   if (e.target.closest('[data-quitar-fila]')) return e.target.closest('.fila-nota').remove();
+  const at = e.target.closest('[data-atiende]');
+  if (at && recEd) { recEd.atiende = at.dataset.atiende; at.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === at)); return; }
+  const cq = e.target.closest('[data-con-quitar]');
+  if (cq && recEd) { recEd.con = recEd.con.filter(id => id !== cq.dataset.conQuitar); $('#conRec').innerHTML = bloqueConRec(); return; }
   const pr = e.target.closest('[data-prio]');
   if (pr && recEd) { recEd.prio = pr.dataset.prio; pr.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === pr)); return; }
   if (id === 'btnRecEliminar' && recEd) {
@@ -2066,6 +2062,7 @@ function abrirPub(id, grupoNuevo) {
 }
 function guardarPubForm(form) {
   const f = new FormData(form), p = pubEditando.p;
+  if (!f.get('nombre').trim()) return toast('Escribe el nombre');
   p.nombre = f.get('nombre').trim();
   p.apodo = f.get('apodo').trim();
   p.grupo = Number(f.get('grupo'));
@@ -2075,7 +2072,6 @@ function guardarPubForm(form) {
   ETIQUETAS_PUB.forEach(([k]) => { if (f.get(k)) p[k] = true; else delete p[k]; });
   const sx = f.get('sexo');
   if (p.nombramiento) p.varon = true; else if (sx === 'M') p.varon = true; else if (sx === 'F') p.varon = false; else delete p.varon;
-  if (!p.nombre) return;
   if (pubEditando.nuevo) DB.publicadores.push(p);
   marcarCambio('publicadores', p);
   const aviso = pubEditando.nuevo ? '' : sincronizarCargos(p, nombAntes, p.nombramiento);
@@ -2222,8 +2218,8 @@ function exportar() {
 function aplicarListaHermanos(lista) {
   const clave = (x) => normal(x).replace(/\s+/g, ' ').trim();
   const activos = pubsActivos();
-  let cambiados = 0, nuevos = 0;
-  const avisos = [];
+  let cambiados = 0;
+  const nuevos = [], avisos = [];
   const vistos = new Set();
   lista.forEach(it => {
     if (!it.nombre) return;
@@ -2235,7 +2231,7 @@ function aplicarListaHermanos(lista) {
       if (nomb) p.nombramiento = nomb;
       if (prec) p.precursor = prec;
       ETIQUETAS_PUB.forEach(([k]) => { if (it[k]) p[k] = true; });
-      DB.publicadores.push(p); marcarCambio('publicadores', p); nuevos++; vistos.add(p.id);
+      DB.publicadores.push(p); marcarCambio('publicadores', p); nuevos.push(p.nombre); vistos.add(p.id);
       return;
     }
     vistos.add(p.id);
@@ -2250,8 +2246,16 @@ function aplicarListaHermanos(lista) {
     const a = sincronizarCargos(p, antesNomb, nomb);
     if (a) avisos.push(a);
   });
-  const fuera = pubsActivos().filter(x => !vistos.has(x.id)).length;
-  toast(cambiados + ' actualizados, ' + nuevos + ' nuevos' + (fuera ? ', ' + fuera + ' que no están en el archivo quedaron igual' : '') + '.' + (avisos.length ? ' ' + avisos.join(' ') : ''), 9000);
+  const fuera = pubsActivos().filter(x => !vistos.has(x.id)).map(x => x.nombre);
+  const todos = pubsActivos(), cuantos = (f) => todos.filter(f).length;
+  const unir = (a) => a.map(esc).join(', ');
+  abrirHoja(`<h3>Lista aplicada</h3>
+    <p class="ayuda" style="font-size:13.5px;margin:0 0 8px">El archivo traía ${lista.length} hermanos: ${cambiados} actualizados, ${vistos.size - cambiados - nuevos.length} sin cambios y ${nuevos.length} nuevos.</p>
+    <div class="panel" style="margin:0 0 10px"><b>Ahora en la app</b><div class="ayuda" style="font-size:13.5px;margin-top:4px">${todos.length} publicadores, ${cuantos(x => x.precursor === 'regular')} precursores regulares, ${cuantos(x => x.precursor === 'auxiliar')} auxiliares, ${cuantos(x => x.nombramiento === 'sm')} siervos ministeriales y ${cuantos(x => x.nombramiento === 'anciano')} ancianos.</div></div>
+    ${nuevos.length ? `<p class="ayuda" style="font-size:13.5px"><b>Nuevos:</b> ${unir(nuevos)}.</p>` : ''}
+    ${fuera.length ? `<p class="ayuda" style="font-size:13.5px"><b>En la app y no en el archivo (no se tocaron):</b> ${unir(fuera)}.</p>` : ''}
+    ${avisos.length ? `<p class="ayuda" style="font-size:13.5px"><b>Cargos:</b> ${avisos.map(esc).join(' ')}</p>` : ''}
+    <div class="acciones"><button class="boton" type="button" id="btnCerrar">Cerrar</button></div>`);
 }
 function importar(file) {
   const r = new FileReader();
@@ -2553,7 +2557,7 @@ function toast(msg, ms) {
 /* ================= Inicio ================= */
 normalizar(); vaciarVencidos(); guardarLocal(); renovarVencidas();
 render();
-{ const n = pendientesHermanos().filter(x => x.fecha <= hoyISO()).length; if (n) toast(n === 1 ? 'Tienes 1 recordatorio de hermanos para hoy o atrasado' : 'Tienes ' + n + ' recordatorios de hermanos para hoy o atrasados'); }
+{ const n = pendientesHermanos().filter(x => x.fecha && x.fecha <= hoyISO()).length; if (n) toast(n === 1 ? 'Tienes 1 recordatorio de hermanos para hoy o atrasado' : 'Tienes ' + n + ' recordatorios de hermanos para hoy o atrasados'); }
 revisarRecordatorios();
 sincronizar(false);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
