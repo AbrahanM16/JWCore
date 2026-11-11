@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#E6F4F5">
+<meta name="theme-color" content="#EEF6FA">
 <script>
 const LS_TEMA = 'ancianos_pwa_tema_v1';
 const oscuroSistema = window.matchMedia('(prefers-color-scheme: dark)');
@@ -14,7 +14,7 @@ function aplicarTema() {
   const m = modoTema();
   const oscuro = m === 'oscuro' || (m === 'auto' && oscuroSistema.matches);
   document.documentElement.dataset.tema = oscuro ? 'oscuro' : 'claro';
-  document.querySelector('meta[name="theme-color"]').content = oscuro ? '#000000' : '#E6F4F5';
+  document.querySelector('meta[name="theme-color"]').content = oscuro ? '#000000' : '#EEF6FA';
 }
 function guardarTema(m) { try { localStorage.setItem(LS_TEMA, m); } catch (e) {} aplicarTema(); }
 oscuroSistema.addEventListener('change', aplicarTema);
@@ -28,30 +28,30 @@ aplicarTema();
 <style>
   :root {
     /* Los nombres de las variables vienen de la versión anterior: navy es el color principal oscuro y dorado el de acento, ahora en aqua */
-    --navy: #0F6B7A; --morado: #3A7CA5; --dorado: #19B2C2;
+    --navy: #0A6A8C; --morado: #3A7CA5; --dorado: #1BA8D6;
     --rojo: #B3261E; --ambar: #B7791F; --verde: #1F8F63;
-    --hero-a: #25A9BA; --hero-z: #083B46; --lema: #C6F4F7;
-    --tinta: #12272D; --texto: #34484E; --gris: #566A70; --gris-suave: #84969B;
-    --navy-t: #0B6574; --rojo-t: #B3261E; --ambar-t: #9A6416; --verde-t: #1B7F57; --dorado-t: #0B7686; --sobre-dorado: #04292F;
-    --rojo-bg: rgba(179,38,30,.10); --ambar-bg: rgba(183,121,31,.13); --verde-bg: rgba(31,143,99,.12); --chip-bg: rgba(18,39,45,.06);
-    --fondo: #E6F4F5;
-    --g1: rgba(25,178,194,.28); --g2: rgba(110,222,206,.28); --g3: rgba(60,140,200,.16);
-    --panel: rgba(255,255,255,.62); --caja: rgba(18,39,45,.05); --campo: rgba(255,255,255,.78); --linea: rgba(18,39,45,.12);
+    --hero-a: #2BB2DC; --hero-z: #08385A; --lema: #D2F3FC;
+    --tinta: #14222C; --texto: #36454F; --gris: #5A6872; --gris-suave: #8693A0;
+    --navy-t: #0A6383; --rojo-t: #B3261E; --ambar-t: #9A6416; --verde-t: #1B7F57; --dorado-t: #0A7299; --sobre-dorado: #032838;
+    --rojo-bg: rgba(179,38,30,.10); --ambar-bg: rgba(183,121,31,.13); --verde-bg: rgba(31,143,99,.12); --chip-bg: rgba(20,34,44,.06);
+    --fondo: #EEF6FA;
+    --g1: rgba(43,178,220,.22); --g2: rgba(140,206,245,.28); --g3: rgba(80,130,225,.12);
+    --panel: rgba(255,255,255,.62); --caja: rgba(20,34,44,.045); --campo: rgba(255,255,255,.8); --linea: rgba(20,34,44,.11);
     --brillo: rgba(255,255,255,.95); --borde: rgba(255,255,255,.6);
-    --sombra: 0 12px 32px -14px rgba(8,59,70,.30), 0 2px 6px -3px rgba(8,59,70,.12);
-    --barra: rgba(240,250,251,.72); --hoja-bg: rgba(246,252,253,.9); --velo: rgba(5,30,36,.32);
-    --pulsar: rgba(15,107,122,.07); --seg-bg: rgba(118,118,128,.12); --seg-on: #FFFFFF; --pill-on: rgba(255,255,255,.85);
-    --mezcla: #000; --toast-bg: rgba(246,252,253,.92);
+    --sombra: 0 12px 32px -14px rgba(10,48,80,.26), 0 2px 6px -3px rgba(10,48,80,.10);
+    --barra: rgba(246,250,253,.75); --hoja-bg: rgba(249,252,254,.92); --velo: rgba(6,24,40,.32);
+    --pulsar: rgba(10,106,140,.07); --seg-bg: rgba(118,118,128,.12); --seg-on: #FFFFFF; --pill-on: rgba(255,255,255,.85);
+    --mezcla: #000; --toast-bg: rgba(249,252,254,.94);
     --vidrio: inset 0 1px 0 var(--brillo), inset 0 0 0 1px var(--borde);
-    --sombra-aqua: rgba(8,59,70,.45);
+    --sombra-aqua: rgba(10,48,80,.42);
     --curva: cubic-bezier(.32,.72,0,1);
     color-scheme: light;
   }
   /* Modo oscuro: negro puro de fondo para pantallas OLED */
   :root[data-tema="oscuro"] {
-    --dorado: #35CCDA; --hero-a: #1E8C9C; --hero-z: #04222A; --lema: #BFF3F6;
+    --dorado: #3CC4EC; --hero-a: #1A86B0; --hero-z: #03202F; --lema: #C6EEFA;
     --tinta: #EEF6F7; --texto: #CFDDE0; --gris: #A3B5B9; --gris-suave: #7B8D91;
-    --navy-t: #6EDCE8; --rojo-t: #FF8A80; --ambar-t: #F0B65A; --verde-t: #5FD6A5; --dorado-t: #7BE6F0; --sobre-dorado: #032A30;
+    --navy-t: #7AD3F2; --rojo-t: #FF8A80; --ambar-t: #F0B65A; --verde-t: #5FD6A5; --dorado-t: #86DDF7; --sobre-dorado: #032A30;
     --rojo-bg: rgba(255,138,128,.14); --ambar-bg: rgba(240,182,90,.14); --verde-bg: rgba(95,214,165,.14); --chip-bg: rgba(255,255,255,.08);
     --fondo: #000000; --g1: transparent; --g2: transparent; --g3: transparent;
     --panel: rgba(255,255,255,.07); --caja: rgba(255,255,255,.06); --campo: rgba(255,255,255,.08); --linea: rgba(255,255,255,.11);
@@ -491,11 +491,20 @@ aplicarTema();
   @media (min-width: 900px) {
     .contenedor { max-width: 1120px; }
     .cols2 { display: flex; flex-direction: column; }
+    .cargos-cols { column-count: 2; column-gap: 14px; }
+    .cargos-cols > .acordeon { break-inside: avoid; margin-top: 0; margin-bottom: 10px; }
+  }
+  /* Desde 760 px (laptop o tableta acostada), las listas de Inicio y de cada cargo van en dos columnas */
+  @media (min-width: 760px) {
     .col .lista:not(:has(> .pub)) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 0; }
     .col .lista > .tarea:nth-child(even) { box-shadow: inset .5px 0 0 var(--linea), inset 0 .5px 0 var(--linea); }
     .col .lista > .tarea:nth-child(2) { box-shadow: inset .5px 0 0 var(--linea); }
-    .cargos-cols { column-count: 2; column-gap: 14px; }
-    .cargos-cols > .acordeon { break-inside: avoid; margin-top: 0; margin-bottom: 10px; }
+    .col .panel-herm { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; }
+    .col .panel-herm > .rec-pub:nth-last-child(2):nth-child(odd) { box-shadow: none; }
+  }
+  @media (min-width: 760px) and (max-width: 1099px) {
+    .col .panel-herm .renglon { flex-wrap: wrap; row-gap: 2px; }
+    .col .panel-herm .renglon .f { flex-basis: 100%; }
   }
 </style>
 </head>
@@ -570,7 +579,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '10 nov 2026, 21:30';
+const VERSION_APP = '10 nov 2026, 22:00';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1135,7 +1144,6 @@ function cuandoFecha(fecha, hora) {
   return { txt: fechaLarga(fecha), cls: '' };
 }
 const grupoCuando = (fecha) => { if (!fecha) return 'sinfecha'; const d = diasHasta(fecha); return d < 0 ? 'atrasados' : d === 0 ? 'hoy' : d <= 7 ? 'semana' : 'despues'; };
-const TIT_GRUPO = { atrasados: 'Atrasados', hoy: 'Para hoy', semana: 'Próximos 7 días', sinfecha: 'Sin fecha', despues: 'Más adelante' };
 function renglonHermano(x, conNombre = true) {
   const c = cuandoFecha(x.fecha, x.hora);
   const txt = x.texto.length > 90 ? x.texto.slice(0, 88) + '…' : x.texto;
@@ -1144,18 +1152,19 @@ function renglonHermano(x, conNombre = true) {
   return `<div class="rec-pub"><button class="renglon" data-rec-editar="${x.p.id}|${x.r.id}"><span class="prio ${x.prio}">${textoPrio(x.prio)}</span><span class="t">${quien}${esc(txt)}${meta ? `<span class="meta-rec">${esc(meta)}</span>` : ''}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
     <button type="button" class="mini" data-rec-hecho="${x.p.id}|${x.r.id}">Hecho</button></div>`;
 }
-const panelHermanos = (l, conNombre = true) => `<div class="panel" style="padding:2px 12px">${l.map(x => renglonHermano(x, conNombre)).join('')}</div>`;
+const panelHermanos = (l, conNombre = true) => `<div class="panel panel-herm" style="padding:2px 12px">${l.map(x => renglonHermano(x, conNombre)).join('')}</div>`;
 let masAdelanteAbierto = false;
-/* Bloque de Inicio: lo de los hermanos agrupado por cuándo toca */
+/* Bloque de Inicio: primero las urgentes, luego las de prioridad media y al final las bajas; dentro de cada una, por fecha.
+   Lo que toca después de 7 días queda plegado en Más adelante. */
+const TIT_PRIO = { alta: 'Urgentes', media: 'Prioridad media', baja: 'Prioridad baja' };
 function bloqueHermanosInicio() {
   const herm = pendientesHermanos();
   if (!herm.length) return '';
-  const g = (k) => herm.filter(x => grupoCuando(x.fecha) === k);
-  const cerca = ['atrasados', 'hoy', 'semana', 'sinfecha'].filter(k => g(k).length);
+  const cerca = herm.filter(x => grupoCuando(x.fecha) !== 'despues'), despues = herm.filter(x => grupoCuando(x.fecha) === 'despues');
   let h = `<h2 class="titulo-seccion">Hermanos<span class="cuenta">${herm.length}</span></h2>`;
   if (!cerca.length) h += '<div class="vacio">Nada atrasado ni para esta semana.</div>';
-  cerca.forEach(k => { h += `<div class="grupo-lista">${TIT_GRUPO[k]} (${g(k).length})</div>` + panelHermanos(g(k)); });
-  if (g('despues').length) h += `<details class="mas-adelante" data-mas ${masAdelanteAbierto ? 'open' : ''}><summary>Más adelante (${g('despues').length})</summary>${panelHermanos(g('despues'))}</details>`;
+  ['alta', 'media', 'baja'].forEach(k => { const l = cerca.filter(x => x.prio === k); if (l.length) h += `<div class="grupo-lista">${TIT_PRIO[k]} (${l.length})</div>` + panelHermanos(l); });
+  if (despues.length) h += `<details class="mas-adelante" data-mas ${masAdelanteAbierto ? 'open' : ''}><summary>Más adelante (${despues.length})</summary>${panelHermanos(despues)}</details>`;
   return h;
 }
 
