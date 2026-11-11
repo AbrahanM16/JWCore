@@ -458,7 +458,9 @@ aplicarTema();
 
   /* Totales de la congregación en Necesidades */
   .totales { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 4px 0 14px; }
-  .total { padding: 10px 12px; border-radius: 18px; background: var(--panel); box-shadow: var(--vidrio); }
+  .total { padding: 10px 12px; border-radius: 18px; background: var(--panel); box-shadow: var(--vidrio); border: 0; text-align: left; font: inherit; color: inherit; }
+  button.total { cursor: pointer; transition: transform .2s var(--curva); }
+  button.total:active { transform: scale(.97); }
   .total b { display: block; font-family: 'Fraunces', Georgia, serif; font-size: 26px; line-height: 1.1; color: var(--tinta); }
   .total span { display: block; margin-top: 2px; font-size: 11.5px; line-height: 1.25; color: var(--gris); }
 
@@ -558,7 +560,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '10 nov 2026, 20:45';
+const VERSION_APP = '10 nov 2026, 21:10';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1294,9 +1296,8 @@ function vistaNecesidades(grupo) {
   }
   const total = pendientesHermanos().length;
   let html = cabecera('Necesidades de los publicadores', 'CONGREGACIÓN CHICHICAXTLE', 'var(--morado)', total + (total === 1 ? ' RECORDATORIO ABIERTO' : ' RECORDATORIOS ABIERTOS'));
-  const todos = pubsActivos(), cuantos = (f) => todos.filter(f).length;
-  html += `<div class="totales">${[['Publicadores', todos.length], ['Precursores regulares', cuantos(x => x.precursor === 'regular')], ['Precursores auxiliares', cuantos(x => x.precursor === 'auxiliar')],
-    ['Siervos ministeriales', cuantos(x => x.nombramiento === 'sm')], ['Ancianos', cuantos(x => x.nombramiento === 'anciano')]].map(([l, n]) => `<div class="total"><b>${n}</b><span>${l}</span></div>`).join('')}</div>`;
+  html += `<div class="totales"><div class="total"><b>${pubsActivos().length}</b><span>Publicadores</span></div>${Object.entries(TOTALES).map(([k, [l, f]]) =>
+    `<button type="button" class="total" data-total="${k}"><b>${pubsActivos().filter(f).length}</b><span>${l}</span></button>`).join('')}</div>`;
   html += `<div class="segmentos">${[1, 2, 3, 4].map(n => {
     const cuenta = pubsActivos().filter(p => p.grupo === n).reduce((s, p) => s + abiertos(p), 0);
     return `<button class="segmento ${n === g ? 'activo' : ''}" style="--c:${COLORES_GRUPO[n]}" data-grupo="${n}">Grupo ${n}${cuenta ? ' (' + cuenta + ')' : ''}</button>`;
@@ -1307,6 +1308,18 @@ function vistaNecesidades(grupo) {
   html += `<div class="lista" style="margin-top:12px">${lista.map(tarjetaPub).join('') || '<div class="vacio">No hay hermanos con este filtro.</div>'}</div>`;
   html += `<button class="boton-agregar" data-nuevo-pub="${g}">+ Agregar hermano al grupo ${g}</button>`;
   vista.innerHTML = html;
+}
+/* Recuadros de arriba de Necesidades: al tocarlos se ve quiénes son, por grupo */
+const TOTALES = {
+  regular: ['Precursores regulares', x => x.precursor === 'regular'], auxiliar: ['Precursores auxiliares', x => x.precursor === 'auxiliar'],
+  sm: ['Siervos ministeriales', x => x.nombramiento === 'sm'], anciano: ['Ancianos', x => x.nombramiento === 'anciano'], a2: ['A-2', x => x.a2]
+};
+function verTotal(k) {
+  const [titulo, f] = TOTALES[k], lista = pubsActivos().filter(f).sort(porNombre);
+  const grupos = [1, 2, 3, 4].map(n => [n, lista.filter(x => x.grupo === n)]).filter(([, l]) => l.length);
+  abrirHoja(`<h3>${titulo}</h3><p class="ayuda" style="font-size:13.5px;margin:0 0 10px">${lista.length} en total</p>
+    ${grupos.map(([n, l]) => `<div class="grupo-lista">Grupo ${n} (${l.length})</div><div class="panel" style="padding:4px 14px;margin-bottom:10px">${l.map(x => `<div class="pap-info" style="padding:7px 0">${esc(x.nombre)}</div>`).join('')}</div>`).join('') || '<div class="vacio">Nadie todavía.</div>'}
+    <div class="acciones"><button class="boton sec" type="button" id="btnCerrar">Cerrar</button></div>`);
 }
 function normal(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
@@ -1661,7 +1674,7 @@ function vistaAjustes() {
 
 /* ================= Hoja de edición de tareas ================= */
 const hoja = $('#hoja'), velo = $('#velo');
-function abrirHoja(html) { hoja.innerHTML = html; velo.classList.add('abierto'); hoja.classList.add('abierta'); }
+function abrirHoja(html) { hoja.innerHTML = html; hoja.scrollTop = 0; velo.classList.add('abierto'); hoja.classList.add('abierta'); }
 function cerrarHoja() { velo.classList.remove('abierto'); hoja.classList.remove('abierta'); }
 velo.addEventListener('click', cerrarHoja);
 
@@ -2042,17 +2055,15 @@ function abrirPub(id, grupoNuevo) {
       <option value="M" ${p.varon === true ? 'selected' : ''}>Hermano</option>
       <option value="F" ${p.varon === false ? 'selected' : ''}>Hermana</option></select>
       <div class="ayuda">Los hermanos aparecen en los menús de cargos.</div></label>
-    <label class="campo"><span>Nombramiento</span><select name="nombramiento">
-      <option value="" ${!p.nombramiento ? 'selected' : ''}>Publicador</option>
-      <option value="anciano" ${p.nombramiento === 'anciano' ? 'selected' : ''}>Anciano</option>
-      <option value="sm" ${p.nombramiento === 'sm' ? 'selected' : ''}>Siervo ministerial</option></select>
-      <div class="ayuda">Agrupa los menús y sirve de punto de partida para Todos los ancianos y Siervos ministeriales.</div></label>
     <div class="campo"><span>Privilegios</span>
+      <label class="casilla"><input type="checkbox" name="nombramiento" value="anciano" data-unico="nombramiento" ${p.nombramiento === 'anciano' ? 'checked' : ''}> Anciano</label>
+      <label class="casilla"><input type="checkbox" name="nombramiento" value="sm" data-unico="nombramiento" ${p.nombramiento === 'sm' ? 'checked' : ''}> Siervo ministerial</label>
       <label class="casilla"><input type="checkbox" name="precursor" value="regular" data-unico="precursor" ${p.precursor === 'regular' ? 'checked' : ''}> Precursor regular</label>
       <label class="casilla"><input type="checkbox" name="precursor" value="auxiliar" data-unico="precursor" ${p.precursor === 'auxiliar' ? 'checked' : ''}> Precursor auxiliar</label>
       <label class="casilla"><input type="checkbox" name="pnb" ${p.pnb ? 'checked' : ''}> Publicador no bautizado (PNB)</label>
       <label class="casilla"><input type="checkbox" name="setc" ${p.setc ? 'checked' : ''}> Siervo del Salón de Asambleas (SETC)</label>
-      <label class="casilla"><input type="checkbox" name="a2" ${p.a2 ? 'checked' : ''}> A-2</label></div>
+      <label class="casilla"><input type="checkbox" name="a2" ${p.a2 ? 'checked' : ''}> A-2</label>
+      <div class="ayuda">Anciano y Siervo ministerial llenan solas las listas de Todos los ancianos y Siervos ministeriales.</div></div>
     <label class="campo"><span>Grupo</span><select name="grupo">${[1, 2, 3, 4].map(n => `<option value="${n}" ${n === p.grupo ? 'selected' : ''}>Grupo ${n}</option>`).join('')}</select></label>
     <div class="acciones">
       <button class="boton" type="submit">Guardar</button>
@@ -2081,7 +2092,7 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-rec-editar],[data-rec-nuevo],[data-rec-hecho],[data-notas],[data-pap-ver],[data-pap-restaurar],[data-pap-purgar],[data-pap-vaciar],[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-total],[data-rec-editar],[data-rec-nuevo],[data-rec-hecho],[data-notas],[data-pap-ver],[data-pap-restaurar],[data-pap-purgar],[data-pap-vaciar],[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
   if (b.dataset.recEditar) { const [pid, rid] = b.dataset.recEditar.split('|'); return abrirRec(pid, rid); }
   if (b.dataset.recNuevo) return abrirRec(b.dataset.recNuevo, null);
@@ -2091,6 +2102,7 @@ vista.addEventListener('click', (e) => {
   if (b.dataset.papRestaurar) return papRestaurar(b.dataset.papRestaurar);
   if (b.dataset.papPurgar) return papPurgar(b.dataset.papPurgar);
   if (b.dataset.papVaciar) return papVaciar();
+  if (b.dataset.total) return verTotal(b.dataset.total);
   if (b.dataset.ajfaltan) { ajCargos.faltan = !ajCargos.faltan; return render(); }
   if (b.dataset.omitir) {
     const que = b.dataset.omitir;
