@@ -579,7 +579,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '10 nov 2026, 22:00';
+const VERSION_APP = '10 nov 2026, 22:30';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1332,7 +1332,7 @@ function vistaNecesidades(grupo) {
 /* Recuadros de arriba de Necesidades: al tocarlos se ve quiénes son, por grupo */
 const TOTALES = {
   regular: ['Precursores regulares', x => x.precursor === 'regular'], auxiliar: ['Precursores auxiliares', x => x.precursor === 'auxiliar'],
-  sm: ['Siervos ministeriales', x => x.nombramiento === 'sm'], anciano: ['Ancianos', x => x.nombramiento === 'anciano'], a2: ['A-2', x => x.a2]
+  sm: ['Siervos ministeriales', x => x.nombramiento === 'sm'], anciano: ['Ancianos', x => x.nombramiento === 'anciano'], a2: ['A-2', x => x.a2], pnb: ['No bautizados (PNB)', x => x.pnb]
 };
 function verTotal(k) {
   const [titulo, f] = TOTALES[k], lista = pubsActivos().filter(f).sort(porNombre);
