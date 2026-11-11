@@ -558,7 +558,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '10 nov 2026, 20:30';
+const VERSION_APP = '10 nov 2026, 20:45';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1911,6 +1911,7 @@ function omitirVarias(lista, donde) {
 }
 
 hoja.addEventListener('change', (e) => {
+  if (e.target.dataset && e.target.dataset.unico && e.target.checked) hoja.querySelectorAll(`[data-unico="${e.target.dataset.unico}"]`).forEach(x => { if (x !== e.target) x.checked = false; });
   if (e.target.id === 'conAgregar' && recEd && e.target.value) { recEd.con.push(e.target.value); $('#conRec').innerHTML = bloqueConRec(); return; }
   if (e.target.name === 'evento' && tareaEditando && $('#formTarea')) {
     const fd = new FormData($('#formTarea'));
@@ -2046,11 +2047,9 @@ function abrirPub(id, grupoNuevo) {
       <option value="anciano" ${p.nombramiento === 'anciano' ? 'selected' : ''}>Anciano</option>
       <option value="sm" ${p.nombramiento === 'sm' ? 'selected' : ''}>Siervo ministerial</option></select>
       <div class="ayuda">Agrupa los menús y sirve de punto de partida para Todos los ancianos y Siervos ministeriales.</div></label>
-    <label class="campo"><span>Precursorado</span><select name="precursor">
-      <option value="" ${!p.precursor ? 'selected' : ''}>Ninguno</option>
-      <option value="regular" ${p.precursor === 'regular' ? 'selected' : ''}>Precursor regular</option>
-      <option value="auxiliar" ${p.precursor === 'auxiliar' ? 'selected' : ''}>Precursor auxiliar</option></select></label>
-    <div class="campo"><span>Otras etiquetas</span>
+    <div class="campo"><span>Privilegios</span>
+      <label class="casilla"><input type="checkbox" name="precursor" value="regular" data-unico="precursor" ${p.precursor === 'regular' ? 'checked' : ''}> Precursor regular</label>
+      <label class="casilla"><input type="checkbox" name="precursor" value="auxiliar" data-unico="precursor" ${p.precursor === 'auxiliar' ? 'checked' : ''}> Precursor auxiliar</label>
       <label class="casilla"><input type="checkbox" name="pnb" ${p.pnb ? 'checked' : ''}> Publicador no bautizado (PNB)</label>
       <label class="casilla"><input type="checkbox" name="setc" ${p.setc ? 'checked' : ''}> Siervo del Salón de Asambleas (SETC)</label>
       <label class="casilla"><input type="checkbox" name="a2" ${p.a2 ? 'checked' : ''}> A-2</label></div>
