@@ -474,9 +474,10 @@ aplicarTema();
   .col { min-width: 0; }
   @media (min-width: 900px) {
     .contenedor { max-width: 1120px; }
-    .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; align-items: start; }
-    .cols2 > .col > :first-child { margin-top: 10px; }
-    .col-tareas { order: -1; }
+    .cols2 { display: flex; flex-direction: column; }
+    .col .lista:not(:has(> .pub)) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 0; }
+    .col .lista > .tarea:nth-child(even) { box-shadow: inset .5px 0 0 var(--linea), inset 0 .5px 0 var(--linea); }
+    .col .lista > .tarea:nth-child(2) { box-shadow: inset .5px 0 0 var(--linea); }
     .cargos-cols { column-count: 2; column-gap: 14px; }
     .cargos-cols > .acordeon { break-inside: avoid; margin-top: 0; margin-bottom: 10px; }
   }
@@ -950,13 +951,13 @@ function vistaInicio() {
     <a class="hero-pie" href="#necesidades"><span>Recordatorios de hermanos</span><b>${recsHermanos}</b>${CHEV}</a>
   </div>`;
 
-  /* En pantalla grande, las tareas van en una columna y lo de los hermanos en otra */
+  /* Los recordatorios y lo de los hermanos van arriba si los hay, y después las tareas */
   const colHermanos = (recordatorios.length ? `<h2 class="titulo-seccion">Recordatorios<span class="cuenta">${recordatorios.length}</span></h2>` + listaTareas(recordatorios, true, '') : '') + bloqueHermanosInicio();
   const colTareas = `<h2 class="titulo-seccion">Atrasadas<span class="cuenta">${vencidas.length}</span></h2>` + botonOmitir('todas', vencidas, 'Omitir todas las atrasadas') + listaTareas(vencidas, true, 'Nada atrasado.') +
     `<h2 class="titulo-seccion">Próximos 7 días<span class="cuenta">${semana.length}</span></h2>` + listaTareas(semana, true, 'Nada para esta semana.') +
     `<a class="abrir-seccion" href="#proximas">Ver todas las tareas próximas</a>` +
     (porRevisar.length ? `<h2 class="titulo-seccion">Por revisar<span class="cuenta">${porRevisar.length}</span></h2>` + listaTareas(porRevisar, true, '') : '');
-  html += `<div class="cols2"><div class="col">${colHermanos}</div><div class="col col-tareas">${colTareas}</div></div>`;
+  html += `<div class="cols2"><div class="col">${colHermanos}</div><div class="col">${colTareas}</div></div>`;
 
   const faltan = faltanFechasClave();
   if (faltan.length) html += `<h2 class="titulo-seccion">Fechas clave sin definir</h2>
