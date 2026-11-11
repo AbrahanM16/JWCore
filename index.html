@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F3F4F7">
+<meta name="theme-color" content="#E6F4F5">
 <script>
 const LS_TEMA = 'ancianos_pwa_tema_v1';
 const oscuroSistema = window.matchMedia('(prefers-color-scheme: dark)');
@@ -14,7 +14,7 @@ function aplicarTema() {
   const m = modoTema();
   const oscuro = m === 'oscuro' || (m === 'auto' && oscuroSistema.matches);
   document.documentElement.dataset.tema = oscuro ? 'oscuro' : 'claro';
-  document.querySelector('meta[name="theme-color"]').content = oscuro ? '#000000' : '#F3F4F7';
+  document.querySelector('meta[name="theme-color"]').content = oscuro ? '#000000' : '#E6F4F5';
 }
 function guardarTema(m) { try { localStorage.setItem(LS_TEMA, m); } catch (e) {} aplicarTema(); }
 oscuroSistema.addEventListener('change', aplicarTema);
@@ -24,46 +24,49 @@ aplicarTema();
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #1F3A5F; --morado: #6B2D6B; --dorado: #B5973A;
-    --rojo: #B3261E; --ambar: #B7791F; --verde: #2E7D46;
-    --hero-a: #2E5585; --hero-z: #13243B; --lema: #E8C766;
-    --tinta: #1E2430; --texto: #3A404C; --gris: #5E6470; --gris-suave: #8A8F98;
-    --navy-t: #1F3A5F; --rojo-t: #B3261E; --ambar-t: #9A6416; --verde-t: #2E7D46; --dorado-t: #7A6220; --sobre-dorado: #13243B;
-    --rojo-bg: rgba(179,38,30,.10); --ambar-bg: rgba(183,121,31,.13); --verde-bg: rgba(46,125,70,.12); --chip-bg: rgba(30,36,48,.06);
-    --fondo: #EEF0F4;
-    --g1: rgba(31,58,95,.24); --g2: rgba(181,151,58,.24); --g3: rgba(107,45,107,.14);
-    --panel: rgba(255,255,255,.62); --caja: rgba(30,36,48,.05); --campo: rgba(255,255,255,.78); --linea: rgba(30,36,48,.12);
+    /* Los nombres de las variables vienen de la versión anterior: navy es el color principal oscuro y dorado el de acento, ahora en aqua */
+    --navy: #0F6B7A; --morado: #3A7CA5; --dorado: #19B2C2;
+    --rojo: #B3261E; --ambar: #B7791F; --verde: #1F8F63;
+    --hero-a: #25A9BA; --hero-z: #083B46; --lema: #C6F4F7;
+    --tinta: #12272D; --texto: #34484E; --gris: #566A70; --gris-suave: #84969B;
+    --navy-t: #0B6574; --rojo-t: #B3261E; --ambar-t: #9A6416; --verde-t: #1B7F57; --dorado-t: #0B7686; --sobre-dorado: #04292F;
+    --rojo-bg: rgba(179,38,30,.10); --ambar-bg: rgba(183,121,31,.13); --verde-bg: rgba(31,143,99,.12); --chip-bg: rgba(18,39,45,.06);
+    --fondo: #E6F4F5;
+    --g1: rgba(25,178,194,.28); --g2: rgba(110,222,206,.28); --g3: rgba(60,140,200,.16);
+    --panel: rgba(255,255,255,.62); --caja: rgba(18,39,45,.05); --campo: rgba(255,255,255,.78); --linea: rgba(18,39,45,.12);
     --brillo: rgba(255,255,255,.95); --borde: rgba(255,255,255,.6);
-    --sombra: 0 12px 32px -14px rgba(31,58,95,.30), 0 2px 6px -3px rgba(31,58,95,.12);
-    --barra: rgba(246,247,250,.72); --hoja-bg: rgba(250,251,253,.88); --velo: rgba(15,24,40,.30);
-    --pulsar: rgba(31,58,95,.07); --seg-bg: rgba(118,118,128,.12); --seg-on: #FFFFFF; --pill-on: rgba(255,255,255,.85);
-    --mezcla: #000; --toast-bg: rgba(250,251,253,.92);
+    --sombra: 0 12px 32px -14px rgba(8,59,70,.30), 0 2px 6px -3px rgba(8,59,70,.12);
+    --barra: rgba(240,250,251,.72); --hoja-bg: rgba(246,252,253,.9); --velo: rgba(5,30,36,.32);
+    --pulsar: rgba(15,107,122,.07); --seg-bg: rgba(118,118,128,.12); --seg-on: #FFFFFF; --pill-on: rgba(255,255,255,.85);
+    --mezcla: #000; --toast-bg: rgba(246,252,253,.92);
     --vidrio: inset 0 1px 0 var(--brillo), inset 0 0 0 1px var(--borde);
+    --sombra-aqua: rgba(8,59,70,.45);
     --curva: cubic-bezier(.32,.72,0,1);
     color-scheme: light;
   }
   /* Modo oscuro: negro puro de fondo para pantallas OLED */
   :root[data-tema="oscuro"] {
-    --dorado: #C9AB4E; --hero-a: #3A67A3; --hero-z: #0C1626;
-    --tinta: #F2F3F5; --texto: #D3D6DC; --gris: #A6ABB5; --gris-suave: #7F858F;
-    --navy-t: #8FB3E8; --rojo-t: #FF8A80; --ambar-t: #F0B65A; --verde-t: #6FD08C; --dorado-t: #E8C766; --sobre-dorado: #0C1626;
-    --rojo-bg: rgba(255,138,128,.14); --ambar-bg: rgba(240,182,90,.14); --verde-bg: rgba(111,208,140,.14); --chip-bg: rgba(255,255,255,.08);
+    --dorado: #35CCDA; --hero-a: #1E8C9C; --hero-z: #04222A; --lema: #BFF3F6;
+    --tinta: #EEF6F7; --texto: #CFDDE0; --gris: #A3B5B9; --gris-suave: #7B8D91;
+    --navy-t: #6EDCE8; --rojo-t: #FF8A80; --ambar-t: #F0B65A; --verde-t: #5FD6A5; --dorado-t: #7BE6F0; --sobre-dorado: #032A30;
+    --rojo-bg: rgba(255,138,128,.14); --ambar-bg: rgba(240,182,90,.14); --verde-bg: rgba(95,214,165,.14); --chip-bg: rgba(255,255,255,.08);
     --fondo: #000000; --g1: transparent; --g2: transparent; --g3: transparent;
     --panel: rgba(255,255,255,.07); --caja: rgba(255,255,255,.06); --campo: rgba(255,255,255,.08); --linea: rgba(255,255,255,.11);
     --brillo: rgba(255,255,255,.10); --borde: rgba(255,255,255,.06); --sombra: none;
-    --barra: rgba(20,20,22,.78); --hoja-bg: rgba(18,19,22,.96); --velo: rgba(0,0,0,.66);
+    --barra: rgba(20,22,22,.78); --hoja-bg: rgba(16,20,21,.96); --velo: rgba(0,0,0,.66);
     --pulsar: rgba(255,255,255,.06); --seg-bg: rgba(118,118,128,.24); --seg-on: rgba(255,255,255,.18); --pill-on: rgba(255,255,255,.14);
-    --mezcla: #fff; --toast-bg: rgba(38,39,43,.96);
+    --mezcla: #fff; --toast-bg: rgba(38,42,43,.96);
+    --sombra-aqua: rgba(0,0,0,.6);
     color-scheme: dark;
   }
   :root[data-tema="oscuro"] .pildora, :root[data-tema="oscuro"] .chip.cargo { color: color-mix(in srgb, var(--c, var(--navy)) 45%, #fff); }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     background: var(--fondo); color: var(--tinta); font-size: 15px; line-height: 1.45;
     -webkit-font-smoothing: antialiased; min-height: 100vh;
     padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
@@ -88,7 +91,7 @@ aplicarTema();
   }
   .barra-sup .dentro { max-width: 1120px; margin: 0 auto; height: 54px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; }
   .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--tinta); font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
-  .marca img { width: 32px; height: 32px; border-radius: 9px; box-shadow: 0 2px 8px -2px rgba(19,36,59,.45); }
+  .marca img { width: 32px; height: 32px; border-radius: 9px; box-shadow: 0 2px 8px -2px var(--sombra-aqua); }
   .redondo {
     width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 999px; color: var(--navy-t);
     background: var(--panel); box-shadow: var(--vidrio); transition: transform .3s var(--curva);
@@ -105,7 +108,7 @@ aplicarTema();
   @media (min-width: 600px) { .cabecera .estado-sync { position: absolute; top: 12px; right: 4px; margin: 0; } }
   .cabecera .sub { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--gris); }
   .cabecera .sub::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--navy)); flex: none; }
-  .cabecera h1 { font-size: 32px; line-height: 1.12; font-weight: 700; letter-spacing: -.02em; margin-top: 4px; text-wrap: pretty; }
+  .cabecera h1 { font-family: 'Fraunces', Georgia, serif; font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -.01em; margin-top: 4px; text-wrap: pretty; }
   .cabecera .sub2 { font-size: 14px; color: var(--gris); margin-top: 2px; }
   .pildora {
     display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .08em;
@@ -120,13 +123,13 @@ aplicarTema();
   .hero {
     position: relative; overflow: hidden; border-radius: 30px; color: #fff;
     background: linear-gradient(145deg, var(--hero-a) 0%, var(--navy) 52%, var(--hero-z) 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.08), 0 22px 44px -20px rgba(19,36,59,.65);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.08), 0 22px 44px -20px var(--sombra-aqua);
   }
-  .hero::before { content: ""; position: absolute; right: -60px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(closest-side, rgba(232,199,102,.32), transparent); pointer-events: none; }
+  .hero::before { content: ""; position: absolute; right: -60px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(closest-side, rgba(170,245,248,.36), transparent); pointer-events: none; }
   .hero-top { position: relative; padding: 20px 22px 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px; align-items: end; }
   .hero-et { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .09em; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); color: var(--lema); }
   .hero-num { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; }
-  .hero-num b { font-size: 60px; line-height: 1; font-weight: 700; letter-spacing: -.03em; }
+  .hero-num b { font-family: 'Fraunces', Georgia, serif; font-size: 60px; line-height: 1; font-weight: 700; letter-spacing: -.03em; }
   .hero-num span { font-size: 15px; font-weight: 600; opacity: .92; }
   .hero-mini { display: flex; gap: 10px; }
   .hero-dato { flex: 1; padding: 12px 14px; border-radius: 20px; background: rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); color: #fff; text-decoration: none; }
@@ -173,7 +176,7 @@ aplicarTema();
   .tarea:active { background: var(--pulsar); }
   .lista { border-radius: 26px; overflow: hidden; display: flex; flex-direction: column; }
   .lista > .tarea { background: none; box-shadow: none; border-radius: 0; }
-  .lista:has(> .pub) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 12px; background: none; box-shadow: none; overflow: visible; border-radius: 0; }
+  .lista:has(> .pub) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 12px; background: none; box-shadow: none; overflow: visible; border-radius: 0; }
   .lista > .tarea + .tarea { box-shadow: inset 0 .5px 0 var(--linea); }
   .anillo {
     flex: none; margin-top: 1px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
@@ -218,21 +221,13 @@ aplicarTema();
   .pub-cab > div { flex: 1; min-width: 0; }
   .pub-nombre { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .pub-completo { font-size: 12px; color: var(--gris-suave); }
-  .pub textarea {
-    width: 100%; min-height: 52px; resize: vertical; margin-top: 10px; border: 0; outline: 0; border-radius: 16px; padding: 10px 12px;
-    font-size: 14px; line-height: 1.45; background: var(--campo); box-shadow: inset 0 0 0 .5px var(--linea);
-  }
-  .pub.pendiente textarea { box-shadow: inset 0 0 0 1.5px var(--ambar-t); }
   .pub-pie { display: flex; gap: 6px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
   .mini {
     border: 0; height: 32px; padding: 0 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--navy-t);
     background: var(--panel); box-shadow: var(--vidrio); transition: transform .3s var(--curva);
   }
   .mini:active { transform: scale(.96); }
-  .mini.on-pendiente { background: var(--ambar-bg); color: var(--ambar-t); }
-  .mini.on-atendido { background: var(--verde-bg); color: var(--verde-t); }
   .mini.on-filtro { background: var(--ambar-bg); color: var(--ambar-t); }
-  .fecha-atendido { font-size: 11.5px; color: var(--gris-suave); }
 
   /* Formularios */
   .campo { display: block; margin-bottom: 12px; }
@@ -302,9 +297,6 @@ aplicarTema();
   .aj-barra i { display: block; height: 100%; background: var(--verde); border-radius: 999px; }
   .clave-oculta { -webkit-text-security: disc; text-security: disc; }
   .acciones-sup { display: flex; gap: 8px; }
-  .nec-meta { margin-top: 8px; }
-  .nec-meta .mini.rojo { background: var(--rojo-bg); color: var(--rojo-t); }
-  .nec-meta .mini.ambar { background: var(--ambar-bg); color: var(--ambar-t); }
   details.mas-adelante { margin-top: 10px; }
   details.mas-adelante > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 10px 6px; font-size: 14px; font-weight: 600; color: var(--navy-t); }
   details.mas-adelante > summary::-webkit-details-marker { display: none; }
@@ -325,9 +317,8 @@ aplicarTema();
   .rec-pub { display: flex; align-items: center; gap: 8px; box-shadow: inset 0 -.5px 0 var(--linea); }
   .rec-pub:last-child { box-shadow: none; }
   .rec-pub .renglon { flex: 1; box-shadow: none; }
-  .fila-ficha { border-radius: 20px; padding: 12px 12px 4px; margin-bottom: 10px; background: var(--caja); }
-  .fila-ficha .acciones-fila { display: flex; gap: 8px; margin: 0 0 8px; }
-  .ficha-tit { display: block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); margin: 16px 6px 8px; }
+  .fila-nota { border-radius: 20px; padding: 12px 12px 4px; margin-bottom: 10px; background: var(--caja); }
+  .fila-nota .acciones-fila { display: flex; gap: 8px; margin: 0 0 8px; }
 
   /* Hoja que se abre encima */
   .velo { position: fixed; inset: 0; background: var(--velo); z-index: 40; opacity: 0; pointer-events: none; transition: opacity .4s var(--curva); }
@@ -338,11 +329,11 @@ aplicarTema();
     background: var(--hoja-bg); -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%);
     box-shadow: var(--vidrio), 0 -10px 40px -10px rgba(0,0,0,.25);
     border-radius: 34px 34px 0 0; padding: 26px 20px calc(24px + env(safe-area-inset-bottom, 0px));
-    transform: translateY(105%); transition: transform .5s var(--curva);
+    transform: translateY(105%); transition: transform .5s var(--curva); pointer-events: none;
   }
   .hoja::before { content: ""; position: absolute; top: 9px; left: 50%; width: 38px; height: 5px; margin-left: -19px; border-radius: 999px; background: var(--gris-suave); opacity: .5; }
-  .hoja.abierta { transform: translateY(0); }
-  .hoja h3 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 12px; }
+  .hoja.abierta { transform: translateY(0); pointer-events: auto; }
+  .hoja h3 { font-family: 'Fraunces', Georgia, serif; font-size: 24px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 12px; }
   @media (prefers-reduced-motion: reduce) { .hoja, .velo, .contenedor { transition: none; animation: none; } }
 
   /* Navegación: píldora flotante abajo en el celular, arriba al centro en pantalla grande */
@@ -350,14 +341,14 @@ aplicarTema();
     position: fixed; z-index: 35; left: calc(14px + env(safe-area-inset-left, 0px)); right: calc(14px + env(safe-area-inset-right, 0px));
     bottom: calc(14px + env(safe-area-inset-bottom, 0px)); height: 64px; padding: 6px; display: grid; grid-template-columns: repeat(5, 1fr);
     border-radius: 999px; background: var(--barra); -webkit-backdrop-filter: blur(30px) saturate(200%); backdrop-filter: blur(30px) saturate(200%);
-    box-shadow: var(--vidrio), 0 16px 40px -14px rgba(19,36,59,.38), 0 2px 8px -2px rgba(19,36,59,.12);
+    box-shadow: var(--vidrio), 0 16px 40px -14px var(--sombra-aqua), 0 2px 8px -2px var(--sombra-aqua);
   }
   nav.inferior a {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 999px;
     text-decoration: none; color: var(--gris-suave); font-size: 10.5px; font-weight: 600; transition: color .3s, background .45s var(--curva);
   }
   nav.inferior a svg { width: 23px; height: 23px; stroke-width: 1.8; }
-  nav.inferior a.activo { color: var(--navy-t); background: var(--pill-on); box-shadow: inset 0 1px 0 var(--brillo), 0 2px 8px -2px rgba(19,36,59,.18); }
+  nav.inferior a.activo { color: var(--navy-t); background: var(--pill-on); box-shadow: inset 0 1px 0 var(--brillo), 0 2px 8px -2px var(--sombra-aqua); }
   nav.inferior a.solo-grande { display: none; }
   @media (min-width: 900px) {
     body { padding-bottom: 48px; }
@@ -448,6 +439,47 @@ aplicarTema();
     background: var(--toast-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
     box-shadow: var(--vidrio), 0 12px 30px -10px rgba(0,0,0,.3);
   }
+  /* Prioridad, notas y recordatorios de los hermanos */
+  .prio { flex: none; width: 10px; height: 10px; border-radius: 50%; align-self: center; margin-right: 10px; background: var(--gris-suave); }
+  .prio.alta { background: var(--rojo-t); box-shadow: 0 0 0 3px var(--rojo-bg); }
+  .prio.media { background: var(--ambar-t); }
+  .renglon:has(.prio) { justify-content: flex-start; align-items: center; }
+  .renglon:has(.prio) .t { flex: 1; min-width: 0; }
+  @media (max-width: 559px) {
+    .renglon:has(.prio) { flex-wrap: wrap; row-gap: 2px; }
+    .renglon:has(.prio) .f { flex-basis: 100%; padding-left: 20px; }
+  }
+  .recs-pub { margin-top: 10px; padding: 0 12px; border-radius: 18px; background: var(--caja); }
+  .notas-pub { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .nota-pub { display: block; width: 100%; text-align: left; border: 0; padding: 9px 12px; border-radius: 16px; background: var(--caja); font-size: 13.5px; line-height: 1.45; color: var(--texto); }
+  .nota-pub b { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--dorado-t); }
+  .nota-pub span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; white-space: pre-line; }
+  .grupo-lista { padding-left: 6px; }
+  .mini.peligro { background: var(--rojo-bg); color: var(--rojo-t); box-shadow: none; }
+
+  /* Papelera */
+  .segmentos.sin-punto > .segmento::before { display: none; }
+  .pap { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 0; box-shadow: inset 0 -.5px 0 var(--linea); }
+  .pap:last-child { box-shadow: none; }
+  .pap-info { flex: 1 1 200px; min-width: 0; }
+  .pap-info .t { font-size: 14.5px; font-weight: 500; line-height: 1.35; }
+  .pap-info .sub { font-size: 12px; color: var(--gris-suave); margin-top: 2px; }
+  .redondo { position: relative; text-decoration: none; }
+  .redondo[data-n]:not([data-n=""])::after {
+    content: attr(data-n); position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+    display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff; background: var(--rojo-t);
+  }
+
+  /* Pantalla grande: más ancho y los pendientes en dos columnas */
+  .col { min-width: 0; }
+  @media (min-width: 900px) {
+    .contenedor { max-width: 1120px; }
+    .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; align-items: start; }
+    .cols2 > .col > :first-child { margin-top: 10px; }
+    .col-tareas { order: -1; }
+    .cargos-cols { column-count: 2; column-gap: 14px; }
+    .cargos-cols > .acordeon { break-inside: avoid; margin-top: 0; margin-bottom: 10px; }
+  }
 </style>
 </head>
 <body>
@@ -455,6 +487,7 @@ aplicarTema();
 <header class="barra-sup"><div class="dentro">
   <a class="marca" href="#inicio"><img src="icon-192.png" alt="">JWCore</a>
   <div class="acciones-sup">
+    <a class="redondo" id="btnPapelera" href="#papelera" aria-label="Papelera"><svg stroke-width="1.9" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></a>
     <button type="button" class="redondo" id="btnColores" aria-label="Colores de JW Library"><svg stroke-width="1.9" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg></button>
   <a class="redondo engrane" href="#ajustes" aria-label="Ajustes"><svg stroke-width="1.9" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg></a>
   </div>
@@ -521,7 +554,7 @@ const TIPOS = {
 };
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const COLORES_GRUPO = { 1: '#C0392B', 2: '#8B7335', 3: '#2E4A6B', 4: '#5C4A1E' };
+const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
 
 let DB = cargarJSON(LS_DATOS, { tareas: [], publicadores: [], cargos: [], formularios: [], fechas: { id: 'fechas', updatedAt: 0 } });
 let CFG = cargarJSON(LS_CFG, { url: '', clave: '', ultimoSync: null });
@@ -895,13 +928,13 @@ function vistaInicio() {
   const hoy = hoyISO();
   const porRevisar = act.filter(t => situacion(t).revisar).sort((a, b) => situacion(a).proxRev.localeCompare(situacion(b).proxRev));
   const recordatorios = act.filter(t => t.recordatorio && t.recordatorio.slice(0, 10) <= hoy && situacion(t).clase !== 'hecha');
-  const necPend = pubsActivos().filter(p => p.estado === 'pendiente').length;
+  const recsHermanos = pendientesHermanos().length;
 
   const hoyD = new Date();
   let html = cabecera('JWCore', DIAS_SEM[hoyD.getDay()] + ', ' + hoyD.getDate() + ' de ' + MESES[hoyD.getMonth()], 'var(--navy)', '', '<div class="sub2">Congregación Chichicaxtle</div>');
 
   if (!DB.tareas.length) {
-    html += `<div class="panel"><b>Aún no hay datos.</b><p class="ayuda" style="font-size:13.5px;margin-top:6px">Conecta tu hoja de Google en Ajustes para cargar tareas y hermanos, o importa el archivo datos_iniciales.json.</p>
+    html += `<div class="panel"><b>Aún no hay datos.</b><p class="ayuda" style="font-size:13.5px;margin-top:6px">Conecta tu hoja de Google en Ajustes para cargar tareas y hermanos.</p>
       <div class="acciones" style="margin-top:10px"><a class="boton" href="#ajustes" style="text-decoration:none">Ir a Ajustes</a></div></div>`;
     vista.innerHTML = html; return;
   }
@@ -914,21 +947,16 @@ function vistaInicio() {
         <a class="hero-dato" href="#proximas"><b>${mes.length}</b><span>Próximos 30 días</span></a>
       </div>
     </div>
-    <a class="hero-pie" href="#necesidades"><span>Necesidades por atender</span><b>${necPend}</b>${CHEV}</a>
+    <a class="hero-pie" href="#necesidades"><span>Recordatorios de hermanos</span><b>${recsHermanos}</b>${CHEV}</a>
   </div>`;
 
-  if (recordatorios.length) html += `<h2 class="titulo-seccion">Recordatorios<span class="cuenta">${recordatorios.length}</span></h2>` + listaTareas(recordatorios, true, '');
-  const herm = pendientesHermanos(), limite7 = sumarDias(hoy, 7);
-  const cerca = herm.filter(x => x.fecha <= limite7), lejos = herm.filter(x => x.fecha > limite7);
-  if (herm.length) {
-    html += `<h2 class="titulo-seccion">Hermanos<span class="cuenta">${herm.length}</span></h2>` + (cerca.length ? panelHermanos(cerca) : '<div class="vacio">Nada atrasado ni para esta semana.</div>');
-    if (lejos.length) html += `<details class="mas-adelante" data-mas ${masAdelanteAbierto ? 'open' : ''}><summary>Más adelante (${lejos.length})</summary>${panelHermanos(lejos)}</details>`;
-  }
-  html += `<h2 class="titulo-seccion">Atrasadas<span class="cuenta">${vencidas.length}</span></h2>` + botonOmitir('todas', vencidas, 'Omitir todas las atrasadas') + listaTareas(vencidas, true, 'Nada atrasado.');
-  html += `<h2 class="titulo-seccion">Próximos 7 días<span class="cuenta">${semana.length}</span></h2>` + listaTareas(semana, true, 'Nada para esta semana.');
-  html += `<a class="abrir-seccion" href="#proximas">Ver todas las tareas próximas</a>`;
-  if (porRevisar.length) html += `<h2 class="titulo-seccion">Por revisar<span class="cuenta">${porRevisar.length}</span></h2>` + listaTareas(porRevisar, true, '');
-  html += `<h2 class="titulo-seccion">Por cargo</h2>` + botonesCargos();
+  /* En pantalla grande, las tareas van en una columna y lo de los hermanos en otra */
+  const colHermanos = (recordatorios.length ? `<h2 class="titulo-seccion">Recordatorios<span class="cuenta">${recordatorios.length}</span></h2>` + listaTareas(recordatorios, true, '') : '') + bloqueHermanosInicio();
+  const colTareas = `<h2 class="titulo-seccion">Atrasadas<span class="cuenta">${vencidas.length}</span></h2>` + botonOmitir('todas', vencidas, 'Omitir todas las atrasadas') + listaTareas(vencidas, true, 'Nada atrasado.') +
+    `<h2 class="titulo-seccion">Próximos 7 días<span class="cuenta">${semana.length}</span></h2>` + listaTareas(semana, true, 'Nada para esta semana.') +
+    `<a class="abrir-seccion" href="#proximas">Ver todas las tareas próximas</a>` +
+    (porRevisar.length ? `<h2 class="titulo-seccion">Por revisar<span class="cuenta">${porRevisar.length}</span></h2>` + listaTareas(porRevisar, true, '') : '');
+  html += `<div class="cols2"><div class="col">${colHermanos}</div><div class="col col-tareas">${colTareas}</div></div>`;
 
   const faltan = faltanFechasClave();
   if (faltan.length) html += `<h2 class="titulo-seccion">Fechas clave sin definir</h2>
@@ -994,7 +1022,7 @@ function bloqueLista(titulo, lista) {
 
 function vistaCargos() {
   let html = cabecera('Cargos', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', 'RESPONSABILIDADES');
-  html += cargosOrden().map(c => {
+  html += '<div class="cargos-cols">' + cargosOrden().map(c => {
     const mias = tareasActivas().filter(t => t.cargo === c.id);
     const clase = (t) => situacion(t).clase;
     const conFecha = mias.filter(t => ['vencida', 'semana', 'mes', 'futura'].includes(clase(t))).sort(ordenarPorFecha);
@@ -1021,7 +1049,7 @@ function vistaCargos() {
         <a class="abrir-seccion" href="#cargo/${c.id}">Abrir sección</a>
       </div>
     </details>`;
-  }).join('');
+  }).join('') + '</div>';
   vista.innerHTML = html;
 }
 vista.addEventListener('toggle', (e) => {
@@ -1044,28 +1072,33 @@ function vistaCargo(id) {
 
   let html = cabecera(c.nombre, 'CONGREGACIÓN CHICHICAXTLE', c.color, (etiquetaPersonas(c) || (cfgCargo(c).especial === 'rota' ? 'SE TURNA CADA SEMANA' : 'SIN ASIGNAR')).toUpperCase());
   html += bloqueResponsables(c);
-  html += `<h2 class="titulo-seccion">Con fecha<span class="cuenta">${conFecha.length}</span></h2>` + botonOmitir('cargo:' + id, conFecha, 'Omitir las atrasadas de este cargo') + listaTareas(conFecha, false, 'Sin tareas con fecha.');
-  if (sinFecha.length) html += `<h2 class="titulo-seccion">Falta ponerles fecha<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '');
-  if (eventos.length) html += `<h2 class="titulo-seccion">Cuando ocurra<span class="cuenta">${eventos.length}</span></h2>` + listaTareas(eventos, false, '');
-  if (perm.length) html += `<h2 class="titulo-seccion">Responsabilidades permanentes</h2>` +
+  const izq = `<h2 class="titulo-seccion">Con fecha<span class="cuenta">${conFecha.length}</span></h2>` + botonOmitir('cargo:' + id, conFecha, 'Omitir las atrasadas de este cargo') + listaTareas(conFecha, false, 'Sin tareas con fecha.') +
+    (sinFecha.length ? `<h2 class="titulo-seccion">Falta ponerles fecha<span class="cuenta">${sinFecha.length}</span></h2>` + listaTareas(sinFecha, false, '') : '');
+  let der = '';
+  if (eventos.length) der += `<h2 class="titulo-seccion">Cuando ocurra<span class="cuenta">${eventos.length}</span></h2>` + listaTareas(eventos, false, '');
+  if (perm.length) der += `<h2 class="titulo-seccion">Responsabilidades permanentes</h2>` +
     perm.map(t => `<button class="permanente tarea" data-tarea="${t.id}" style="border-left-color:${c.color}">${esc(t.titulo)}${situacion(t).revisar ? '<span class="chip ambar">Por revisar</span>' : ''}${t.ref ? `<span class="chip ref">${esc(t.ref)}</span>` : ''}</button>`).join('');
-  if (hechas.length) html += `<h2 class="titulo-seccion">Hechas<span class="cuenta">${hechas.length}</span></h2>` + listaTareas(hechas, false, '');
+  if (hechas.length) der += `<h2 class="titulo-seccion">Hechas<span class="cuenta">${hechas.length}</span></h2>` + listaTareas(hechas, false, '');
   const ocultas = tareasTodas().filter(t => t.cargo === id && t.oculta);
-  if (ocultas.length) html += `<details class="ocultas"><summary>Ocultas (${ocultas.length})</summary>${listaTareas(ocultas, false, '')}</details>`;
+  if (ocultas.length) der += `<details class="ocultas"><summary>Ocultas (${ocultas.length})</summary>${listaTareas(ocultas, false, '')}</details>`;
+  html += `<div class="cols2"><div class="col">${izq}</div><div class="col">${der}</div></div>`;
   html += `<button class="boton-agregar" data-nueva="${id}">+ Agregar tarea</button>`;
   vista.innerHTML = html;
 }
 
-/* ---------- Ficha del hermano: datos permanentes y recordatorios con fecha ---------- */
-/* Pendientes de hermanos con fecha: necesidades por atender con fecha límite y recordatorios de la ficha */
-const necActiva = (p) => p.estado !== 'atendido' && !!(p.necLimite || (p.necAvisos || []).length);
+/* ---------- Hermanos: notas permanentes y recordatorios con prioridad ---------- */
+const PRIORIDADES = [['alta', 'Alta'], ['media', 'Media'], ['baja', 'Baja']];
+const ORDEN_PRIO = { alta: 0, media: 1, baja: 2 };
+const nuevoId = (pre) => pre + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const recsAbiertos = (p) => (p.recordatorios || []).filter(r => r.fecha && !r.eliminado);
+const prioDe = (r) => ORDEN_PRIO[r.prioridad] === undefined ? 'media' : r.prioridad;
+const ordenRec = (a, b) => ORDEN_PRIO[a.prio] - ORDEN_PRIO[b.prio] || (a.fecha + a.hora).localeCompare(b.fecha + b.hora);
+const itemRec = (p, r) => ({ p, r, fecha: r.fecha, hora: r.hora || '', texto: r.texto || '', prio: prioDe(r) });
+/* Todos los recordatorios abiertos de los hermanos, primero por prioridad y luego por fecha */
 function pendientesHermanos() {
   const l = [];
-  pubsActivos().forEach(p => {
-    if (p.estado !== 'atendido' && p.necLimite) l.push({ tipo: 'nec', p, fecha: p.necLimite, hora: '', texto: p.necesidad || 'Necesidad' });
-    (p.recordatorios || []).forEach(r => { if (r.fecha) l.push({ tipo: 'rec', p, r, fecha: r.fecha, hora: r.hora || '', texto: r.texto || '' }); });
-  });
-  return l.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+  pubsActivos().forEach(p => recsAbiertos(p).forEach(r => l.push(itemRec(p, r))));
+  return l.sort(ordenRec);
 }
 function cuandoFecha(fecha, hora) {
   const d = diasHasta(fecha), h = hora ? ', ' + hora : '';
@@ -1075,119 +1108,148 @@ function cuandoFecha(fecha, hora) {
   if (d <= 7) return { txt: 'En ' + d + ' días', cls: 'ambar' };
   return { txt: fechaLarga(fecha), cls: '' };
 }
-function renglonHermano(x) {
-  const c = cuandoFecha(x.fecha, x.hora), nom = `<b>${esc(nombreCorto(x.p))}</b>`;
-  if (x.tipo === 'nec') {
-    const txt = x.texto.length > 90 ? x.texto.slice(0, 88) + '…' : x.texto;
-    return `<div class="rec-pub"><button class="renglon" data-nec-avisos="${x.p.id}"><span class="t">${nom}: ${esc(txt)}</span><span class="f ${c.cls}">${esc((c.cls === 'rojo' ? '' : 'Límite: ') + c.txt)}</span></button>
-      <button type="button" class="mini" data-est="atendido" data-id="${x.p.id}">Atendido</button></div>`;
-  }
-  return `<div class="rec-pub"><button class="renglon" data-ficha="${x.p.id}"><span class="t">${nom}${x.texto ? ': ' + esc(x.texto) : ''}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
+const grupoCuando = (fecha) => { const d = diasHasta(fecha); return d < 0 ? 'atrasados' : d === 0 ? 'hoy' : d <= 7 ? 'semana' : 'despues'; };
+const TIT_GRUPO = { atrasados: 'Atrasados', hoy: 'Para hoy', semana: 'Próximos 7 días', despues: 'Más adelante' };
+function renglonHermano(x, conNombre = true) {
+  const c = cuandoFecha(x.fecha, x.hora);
+  const txt = x.texto.length > 90 ? x.texto.slice(0, 88) + '…' : x.texto;
+  const quien = conNombre ? `<b>${esc(nombreCorto(x.p))}</b>${txt ? ': ' : ''}` : '';
+  return `<div class="rec-pub"><button class="renglon" data-rec-editar="${x.p.id}|${x.r.id}"><span class="prio ${x.prio}" title="Prioridad ${x.prio}"></span><span class="t">${quien}${esc(txt)}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
     <button type="button" class="mini" data-rec-hecho="${x.p.id}|${x.r.id}">Hecho</button></div>`;
 }
-const panelHermanos = (l) => `<div class="panel" style="padding:2px 12px">${l.map(renglonHermano).join('')}</div>`;
+const panelHermanos = (l, conNombre = true) => `<div class="panel" style="padding:2px 12px">${l.map(x => renglonHermano(x, conNombre)).join('')}</div>`;
 let masAdelanteAbierto = false;
-function recHecho(p, rid) {
-  const r = (p.recordatorios || []).find(x => x.id === rid);
-  if (!r) return '';
-  agregarEntrada(p, hoyISO(), 'Recordatorio: ' + (r.texto || fechaLarga(r.fecha)));
-  delete r.antes;
-  let aviso = '';
-  if (r.anual) { do { r.fecha = sumarMeses(r.fecha, 12); } while (r.fecha <= hoyISO()); aviso = ' Se repite el ' + fechaLarga(r.fecha) + '.'; }
-  else p.recordatorios = p.recordatorios.filter(x => x.id !== rid);
-  if (!p.recordatorios.length) delete p.recordatorios;
-  marcarCambio('publicadores', p);
-  return 'Recordatorio hecho.' + aviso;
+/* Bloque de Inicio: lo de los hermanos agrupado por cuándo toca */
+function bloqueHermanosInicio() {
+  const herm = pendientesHermanos();
+  if (!herm.length) return '';
+  const g = (k) => herm.filter(x => grupoCuando(x.fecha) === k);
+  const cerca = ['atrasados', 'hoy', 'semana'].filter(k => g(k).length);
+  let h = `<h2 class="titulo-seccion">Hermanos<span class="cuenta">${herm.length}</span></h2>`;
+  if (!cerca.length) h += '<div class="vacio">Nada atrasado ni para esta semana.</div>';
+  cerca.forEach(k => { h += `<div class="grupo-lista">${TIT_GRUPO[k]} (${g(k).length})</div>` + panelHermanos(g(k)); });
+  if (g('despues').length) h += `<details class="mas-adelante" data-mas ${masAdelanteAbierto ? 'open' : ''}><summary>Más adelante (${g('despues').length})</summary>${panelHermanos(g('despues'))}</details>`;
+  return h;
 }
-function filaDato(d) {
-  return `<div class="fila-ficha" data-fd>
-    <label class="campo"><span>Título</span><input data-f="titulo" value="${esc(d.titulo || '')}" placeholder="Ej. Trabajo, Salud de su familia, Transporte"></label>
-    <label class="campo"><span>Dato</span><textarea data-f="texto">${esc(d.texto || '')}</textarea></label>
-    <div class="acciones-fila"><button type="button" class="mini" data-quitar-fila>Quitar</button></div></div>`;
-}
-function filaRec(r) {
-  return `<div class="fila-ficha" data-fr="${r.id}">
-    <div class="campo"><span>Fecha</span>${selectorFecha('rf_' + r.id, r.fecha)}</div>
-    <label class="campo"><span>Hora (opcional, para el aviso por correo)</span><input type="time" data-f="hora" value="${esc(r.hora || '')}"></label>
-    <label class="campo"><span>Qué recordar</span><input data-f="texto" value="${esc(r.texto || '')}"></label>
-    <label class="chk-pasada"><input type="checkbox" data-f="anual" ${r.anual ? 'checked' : ''}> Repetir cada año</label>
-    <div class="acciones-fila" style="margin-top:8px"><button type="button" class="mini" data-rec-hecho-f="${r.id}">Hecho</button><button type="button" class="mini" data-quitar-fila>Quitar</button></div></div>`;
-}
-const nuevoRecId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-let fichaEd = null;
-function abrirFicha(id) {
-  const p = pubPorId(id); if (!p) return;
-  fichaEd = { p };
-  abrirHoja(`<h3>Ficha</h3><div style="font-weight:600;font-size:14.5px;margin-bottom:2px">${esc(p.nombre)}</div>
-  <form id="formFicha">
-    <span class="ficha-tit">Datos permanentes</span>
-    <div id="listaDatos">${(p.datos || []).map(filaDato).join('')}</div>
-    <button type="button" class="mini" data-add-dato>+ Agregar dato</button>
-    <span class="ficha-tit">Recordatorios</span>
-    <div id="listaRecs">${(p.recordatorios || []).map(filaRec).join('')}</div>
-    <button type="button" class="mini" data-add-rec>+ Agregar recordatorio</button>
-    <p class="ayuda" style="margin:8px 0 0">Todo recordatorio con fecha sale en Inicio hasta que lo marques como hecho. Con hora, te llega un correo a esa hora; sin hora, va en el resumen diario.</p>
+
+/* Recordatorio nuevo o existente */
+let recEd = null;
+function abrirRec(pid, rid) {
+  const p = pubPorId(pid); if (!p) return;
+  const r = rid ? (p.recordatorios || []).find(x => x.id === rid) : { id: nuevoId('r'), fecha: '', texto: '', prioridad: 'media' };
+  if (!r) return;
+  recEd = { p, r, nuevo: !rid, prio: prioDe(r) };
+  abrirHoja(`<h3>${rid ? 'Recordatorio' : 'Nuevo recordatorio'}</h3><div style="font-weight:600;font-size:14.5px;margin-bottom:10px">${esc(nombreCorto(p))}</div>
+  <form id="formRec">
+    <label class="campo"><span>Qué hay que recordar</span><textarea name="texto" placeholder="Visitarlo, llevarle algo, hablar con su familia...">${esc(r.texto || '')}</textarea></label>
+    <div class="campo"><span>Fecha</span>${selectorFecha('fecha', r.fecha)}</div>
+    <label class="campo"><span>Hora (opcional)</span><input type="time" name="hora" value="${esc(r.hora || '')}">
+      <div class="ayuda">Con hora te llega un correo a esa hora. Sin hora, va en el resumen de las 9.</div></label>
+    <div class="campo"><span>Prioridad</span><div class="segmento" style="margin:0">${PRIORIDADES.map(([k, l]) => `<button type="button" class="${recEd.prio === k ? 'on' : ''}" data-prio="${k}">${l}</button>`).join('')}</div></div>
+    <label class="chk-pasada"><input type="checkbox" name="anual" ${r.anual ? 'checked' : ''}> Repetir cada año</label>
     <div class="acciones" style="margin-top:14px">
       <button class="boton" type="submit">Guardar</button>
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
+      ${rid ? '<button class="boton peligro" type="button" id="btnRecEliminar">Eliminar</button>' : ''}
     </div>
   </form>`);
 }
-/* Lee lo que hay en pantalla y lo pasa al hermano. Con exigir, un recordatorio sin fecha no se guarda. */
-function leerFicha(exigir) {
-  const p = fichaEd.p, f = $('#formFicha');
-  const v = (fila, k) => { const x = fila.querySelector(`[data-f="${k}"]`); return x ? x.value.trim() : ''; };
-  const datos = [...f.querySelectorAll('[data-fd]')].map(fila => ({ titulo: v(fila, 'titulo'), texto: v(fila, 'texto') })).filter(d => d.titulo || d.texto);
-  const recs = [...f.querySelectorAll('[data-fr]')].map(fila => ({
-    id: fila.dataset.fr, fecha: fila.querySelector('input[type=hidden]').value, hora: v(fila, 'hora'), texto: v(fila, 'texto'),
-    anual: fila.querySelector('[data-f="anual"]').checked
-  })).filter(r => r.fecha || r.texto).map(r => { if (!r.hora) delete r.hora; return r; });
-  if (exigir && recs.some(r => !r.fecha)) { toast('A un recordatorio le falta la fecha'); return false; }
-  if (datos.length) p.datos = datos; else delete p.datos;
-  if (recs.length) p.recordatorios = recs; else delete p.recordatorios;
+function guardarRec(form) {
+  const f = new FormData(form), { p, r } = recEd;
+  const fecha = f.get('fecha'), texto = (f.get('texto') || '').trim(), hora = (f.get('hora') || '').trim();
+  if (!texto) { toast('Escribe qué hay que recordar'); return false; }
+  if (!fecha) { toast('Elige el día, el mes y el año'); return false; }
+  r.texto = texto; r.fecha = fecha; r.prioridad = recEd.prio;
+  if (hora) r.hora = hora; else delete r.hora;
+  if (f.get('anual')) r.anual = true; else delete r.anual;
+  if (recEd.nuevo) (p.recordatorios = p.recordatorios || []).push(r);
   marcarCambio('publicadores', p);
   return true;
 }
 
-/* Fecha límite y avisos (fecha y hora) de la necesidad de un hermano; los avisos llegan por correo mientras no esté atendida */
-const MAX_AVISOS = 10;
-function etiquetaAvisosNec(p) {
-  const n = (p.necAvisos || []).length;
-  if (!p.necLimite && !n) return { txt: '+ Fecha límite y avisos', cls: '' };
-  const partes = [];
-  let cls = '';
-  if (p.necLimite) { const c = cuandoFecha(p.necLimite); partes.push(c.cls === 'rojo' ? c.txt : 'Límite: ' + c.txt); if (p.estado !== 'atendido') cls = c.cls; }
-  if (n) partes.push(n === 1 ? '1 aviso' : n + ' avisos');
-  return { txt: partes.join(', '), cls };
+/* Hecho: queda en el registro del hermano con la fecha y lo que se atendió */
+let hechoEd = null;
+function abrirHechoRec(pid, rid) {
+  const p = pubPorId(pid), r = p && (p.recordatorios || []).find(x => x.id === rid);
+  if (!r) return;
+  hechoEd = { p, r };
+  abrirHoja(`<h3>Registrar como hecho</h3><div style="font-weight:600;font-size:14.5px">${esc(nombreCorto(p))}</div>
+  <p class="ayuda" style="font-size:13.5px;margin:4px 0 12px">${esc(r.texto || 'Recordatorio')} · ${esc(cuandoFecha(r.fecha, r.hora).txt)}</p>
+  <form id="formHechoRec">
+    <div class="campo"><span>Cuándo se atendió</span>${selectorFecha('fechaHecho', hoyISO())}</div>
+    <label class="campo"><span>Qué se atendió (opcional)</span><textarea name="detalle" placeholder="Qué se hizo, con quién, cómo quedó..."></textarea></label>
+    <div class="acciones"><button class="boton verde" type="submit">Registrar</button><button class="boton sec" type="button" id="btnCerrar">Cancelar</button></div>
+  </form>`);
 }
-const filaAviso = (v) => `<div class="fila-ficha" data-fa>${selectorFechaHora('av_' + nuevoRecId(), v || '')}<div class="acciones-fila" style="margin-top:8px"><button type="button" class="mini" data-quitar-fila>Quitar</button></div></div>`;
-let necEd = null;
-function abrirAvisosNec(id) {
+function registrarHechoRec(form) {
+  const { p, r } = hechoEd, f = new FormData(form);
+  const fecha = f.get('fechaHecho') || hoyISO(), detalle = (f.get('detalle') || '').trim();
+  agregarEntrada(p, fecha, (r.texto || 'Recordatorio') + (detalle ? '. Se atendió: ' + detalle : ''));
+  p.historial[p.historial.length - 1].para = r.fecha;
+  let aviso = '';
+  if (r.anual) { do { r.fecha = sumarMeses(r.fecha, 12); } while (r.fecha <= hoyISO()); aviso = ' Se repite el ' + fechaLarga(r.fecha) + '.'; }
+  else p.recordatorios = p.recordatorios.filter(x => x.id !== r.id);
+  if (!p.recordatorios.length) delete p.recordatorios;
+  marcarCambio('publicadores', p);
+  return 'Registrado.' + aviso;
+}
+
+/* Notas permanentes: título y texto libres */
+const filaNota = (n) => `<div class="fila-nota" data-fn="${esc(n.id || nuevoId('n'))}">
+  <label class="campo"><span>Título</span><input data-f="titulo" value="${esc(n.titulo || '')}" placeholder="Ej. Necesidad, Trabajo, Salud, Transporte"></label>
+  <label class="campo"><span>Nota</span><textarea data-f="texto">${esc(n.texto || '')}</textarea></label>
+  <div class="acciones-fila"><button type="button" class="mini" data-quitar-fila>Quitar</button></div></div>`;
+let notasEd = null;
+function abrirNotas(id) {
   const p = pubPorId(id); if (!p) return;
-  necEd = { p };
-  abrirHoja(`<h3>Fecha límite y avisos</h3><div style="font-weight:600;font-size:14.5px">${esc(p.nombre)}</div>
-  <p class="ayuda" style="font-size:13.5px;margin:4px 0 12px">${esc(p.necesidad || 'Sin necesidad escrita todavía.')}</p>
-  <form id="formNecAv">
-    <div class="campo"><span>Fecha límite</span>${selectorFecha('necLimite', p.necLimite || '')}</div>
-    <span class="ficha-tit">Avisos por correo</span>
-    <div id="listaAvisos">${(p.necAvisos || []).map(filaAviso).join('')}</div>
-    <button type="button" class="mini" data-add-aviso>+ Agregar aviso</button>
-    <p class="ayuda" style="margin:8px 0 0">Hasta ${MAX_AVISOS} avisos. Cada uno te llega por correo a su hora mientras la necesidad no esté atendida. La fecha límite sale en Inicio y en el resumen diario.</p>
+  notasEd = { p };
+  const notas = p.notas || [];
+  abrirHoja(`<h3>Notas permanentes</h3><div style="font-weight:600;font-size:14.5px;margin-bottom:10px">${esc(nombreCorto(p))}</div>
+  <form id="formNotas">
+    <div id="listaNotas">${(notas.length ? notas : [{}]).map(filaNota).join('')}</div>
+    <button type="button" class="mini" data-add-nota>+ Agregar nota</button>
+    <p class="ayuda" style="margin:8px 0 0">Lo que no cambia con el tiempo: su situación, necesidades de fondo, datos útiles. Lo que tiene fecha va en recordatorios.</p>
     <div class="acciones" style="margin-top:14px">
       <button class="boton" type="submit">Guardar</button>
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
     </div>
   </form>`);
 }
-function guardarAvisosNec() {
-  const p = necEd.p, f = $('#formNecAv');
-  const lim = f.querySelector('input[name="necLimite"]').value;
-  const avisos = [...new Set([...f.querySelectorAll('[data-fa] input[type=hidden]')].map(x => x.value).filter(v => v.length === 16))].sort();
-  if (avisos.length > MAX_AVISOS) { toast('Máximo ' + MAX_AVISOS + ' avisos'); return false; }
-  if (lim) p.necLimite = lim; else delete p.necLimite;
-  if (avisos.length) p.necAvisos = avisos; else delete p.necAvisos;
+function guardarNotas() {
+  const p = notasEd.p, f = $('#formNotas');
+  const v = (fila, k) => fila.querySelector(`[data-f="${k}"]`).value.trim();
+  const notas = [...f.querySelectorAll('[data-fn]')].map(fila => ({ id: fila.dataset.fn, titulo: v(fila, 'titulo'), texto: v(fila, 'texto') })).filter(n => n.titulo || n.texto);
+  if (notas.length) p.notas = notas; else delete p.notas;
   marcarCambio('publicadores', p);
-  return true;
+}
+
+/* Versiones anteriores guardaban un solo texto de necesidad, con estado, fecha límite y avisos, y datos con título.
+   Ahora todo son notas permanentes y recordatorios. Se hace una vez por hermano y no pierde nada. */
+function migrarHermanos() {
+  DB.publicadores.forEach(p => {
+    if (!['necesidad', 'estado', 'atendido', 'datos', 'necLimite', 'necAvisos'].some(k => k in p)) return;
+    const texto = String(p.necesidad || '').trim(), atendida = p.estado === 'atendido';
+    const notas = (p.notas || []).slice(), recs = (p.recordatorios || []).slice();
+    if (texto && !atendida) notas.push({ id: nuevoId('n'), titulo: 'Necesidad', texto });
+    if (texto && atendida && !(p.historial || []).some(h => (h.nota || '').includes(texto.slice(0, 40)))) agregarEntrada(p, p.atendido || hoyISO(), 'Atendido: ' + texto);
+    (p.datos || []).forEach(d => { if (d.titulo || d.texto) notas.push({ id: nuevoId('n'), titulo: d.titulo || '', texto: d.texto || '' }); });
+    if (!atendida) {
+      const que = texto ? (texto.length > 80 ? texto.slice(0, 78) + '…' : texto) : 'Necesidad';
+      const limite = p.necLimite ? { id: nuevoId('r'), fecha: p.necLimite, texto: que, prioridad: 'media' } : null;
+      if (limite) recs.push(limite);
+      (p.necAvisos || []).forEach(a => {
+        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(a)) return;
+        if (limite && !limite.hora && limite.fecha === a.slice(0, 10)) limite.hora = a.slice(11, 16);
+        else recs.push({ id: nuevoId('r'), fecha: a.slice(0, 10), hora: a.slice(11, 16), texto: que, prioridad: 'media' });
+      });
+    }
+    ['necesidad', 'estado', 'atendido', 'datos', 'necLimite', 'necAvisos'].forEach(k => delete p[k]);
+    if (notas.length) p.notas = notas;
+    if (recs.length) p.recordatorios = recs;
+    /* Un punto más que antes: así una copia vieja sin migrar nunca pisa una edición más reciente */
+    p.updatedAt = (p.updatedAt || 0) + 1;
+    if (!SUCIOS.publicadores.includes(p.id)) SUCIOS.publicadores.push(p.id);
+  });
 }
 
 /* ---------- Necesidades ---------- */
@@ -1196,47 +1258,138 @@ function vistaNecesidades(grupo) {
   if (grupo) filtroNec.grupo = grupo;
   const g = Number(filtroNec.grupo);
   const color = COLORES_GRUPO[g] || 'var(--morado)';
+  const abiertos = (p) => recsAbiertos(p).length;
   let lista = pubsActivos().filter(p => p.grupo === g);
-  if (filtroNec.ver === 'pendiente') lista = lista.filter(p => p.estado === 'pendiente');
-  if (filtroNec.ver === 'atendido') lista = lista.filter(p => p.estado === 'atendido');
+  if (filtroNec.ver === 'con') lista = lista.filter(p => abiertos(p));
+  if (filtroNec.ver === 'sin') lista = lista.filter(p => !abiertos(p));
   if (filtroNec.q) {
     const q = normal(filtroNec.q);
-    lista = lista.filter(p => normal(p.nombre + ' ' + (p.apodo || '') + ' ' + (p.necesidad || '') + ' ' + (p.datos || []).map(d => d.titulo + ' ' + d.texto).join(' ')).includes(q));
+    lista = lista.filter(p => normal(p.nombre + ' ' + (p.apodo || '') + ' ' + (p.notas || []).map(n => n.titulo + ' ' + n.texto).join(' ') + ' ' + recsAbiertos(p).map(r => r.texto).join(' ')).includes(q));
   }
-  const pend = pubsActivos().filter(p => p.estado === 'pendiente');
-  let html = cabecera('Necesidades de los publicadores', 'CONGREGACIÓN CHICHICAXTLE', 'var(--morado)', pend.length + ' POR ATENDER');
+  const total = pendientesHermanos().length;
+  let html = cabecera('Necesidades de los publicadores', 'CONGREGACIÓN CHICHICAXTLE', 'var(--morado)', total + (total === 1 ? ' RECORDATORIO ABIERTO' : ' RECORDATORIOS ABIERTOS'));
   html += `<div class="segmentos">${[1, 2, 3, 4].map(n => {
-    const cuenta = pubsActivos().filter(p => p.grupo === n && p.estado === 'pendiente').length;
+    const cuenta = pubsActivos().filter(p => p.grupo === n).reduce((s, p) => s + abiertos(p), 0);
     return `<button class="segmento ${n === g ? 'activo' : ''}" style="--c:${COLORES_GRUPO[n]}" data-grupo="${n}">Grupo ${n}${cuenta ? ' (' + cuenta + ')' : ''}</button>`;
   }).join('')}</div>
-  <div class="segmentos" style="margin-top:8px">${[['todos', 'Todos'], ['pendiente', 'Por atender'], ['atendido', 'Atendidos']].map(([k, l]) =>
+  <div class="segmentos" style="margin-top:8px">${[['todos', 'Todos'], ['con', 'Con recordatorios'], ['sin', 'Sin recordatorios']].map(([k, l]) =>
     `<button class="segmento ${filtroNec.ver === k ? 'activo' : ''}" style="--c:${color}" data-ver="${k}">${l}</button>`).join('')}</div>
-  <input class="buscador" type="search" placeholder="Buscar nombre, apodo, necesidad o dato" value="${esc(filtroNec.q)}" id="buscarNec">`;
+  <input class="buscador" type="search" placeholder="Buscar nombre, apodo, nota o recordatorio" value="${esc(filtroNec.q)}" id="buscarNec">`;
   html += `<div class="lista" style="margin-top:12px">${lista.map(tarjetaPub).join('') || '<div class="vacio">No hay hermanos con este filtro.</div>'}</div>`;
   html += `<button class="boton-agregar" data-nuevo-pub="${g}">+ Agregar hermano al grupo ${g}</button>`;
   vista.innerHTML = html;
 }
-function normal(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function normal(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
 function tarjetaPub(p) {
   const tieneApodo = p.apodo && p.apodo.trim();
-  return `<div class="pub ${p.estado || ''}" data-pub="${p.id}">
+  const recs = recsAbiertos(p).map(r => itemRec(p, r)).sort(ordenRec);
+  const notas = (p.notas || []).filter(n => n.titulo || n.texto);
+  const reg = (p.historial || []).length;
+  return `<div class="pub" data-pub="${p.id}">
     <div class="pub-cab">
       <span class="mono" style="--c:${COLORES_GRUPO[p.grupo] || 'var(--morado)'}">${mono(nombreCorto(p))}</span>
       <div><div class="pub-nombre">${esc(nombreCorto(p))}${p.nombramiento ? ` <span class="chip">${p.nombramiento === 'anciano' ? 'Anciano' : 'SM'}</span>` : ''}</div>${tieneApodo ? `<div class="pub-completo">${esc(p.nombre)}</div>` : ''}</div>
       <button class="mini" data-editar-pub="${p.id}">Editar</button>
     </div>
-    <textarea data-nec="${p.id}" placeholder="Escribe aquí la necesidad...">${esc(p.necesidad || '')}</textarea>
-    <div class="nec-meta"><button type="button" class="mini ${etiquetaAvisosNec(p).cls}" data-nec-avisos="${p.id}">${esc(etiquetaAvisosNec(p).txt)}</button></div>
+    ${notas.length ? `<div class="notas-pub">${notas.map(n => `<button type="button" class="nota-pub" data-notas="${p.id}">${n.titulo ? `<b>${esc(n.titulo)}</b>` : ''}<span>${esc(n.texto)}</span></button>`).join('')}</div>` : ''}
+    ${recs.length ? `<div class="recs-pub">${recs.map(x => renglonHermano(x, false)).join('')}</div>` : ''}
     <div class="pub-pie">
-      <button class="mini ${p.estado === 'pendiente' ? 'on-pendiente' : ''}" data-est="pendiente" data-id="${p.id}">Por atender</button>
-      <button class="mini ${p.estado === 'atendido' ? 'on-atendido' : ''}" data-est="atendido" data-id="${p.id}">Atendido</button>
-      ${p.estado === 'atendido' && p.atendido ? `<span class="fecha-atendido">el ${fechaLarga(p.atendido)}</span>` : ''}
-      <button class="mini" data-ficha="${p.id}" style="margin-left:auto">Ficha${(p.datos || []).length + (p.recordatorios || []).length ? ' (' + ((p.datos || []).length + (p.recordatorios || []).length) + ')' : ''}</button>
-      <button class="mini" data-hist-pub="${p.id}">Historial${(p.historial || []).length ? ' (' + p.historial.length + ')' : ''}</button>
+      <button type="button" class="mini" data-rec-nuevo="${p.id}">+ Recordatorio</button>
+      <button type="button" class="mini" data-notas="${p.id}">${notas.length ? 'Notas (' + notas.length + ')' : '+ Notas'}</button>
+      <button type="button" class="mini" data-hist-pub="${p.id}" style="margin-left:auto">Registro${reg ? ' (' + reg + ')' : ''}</button>
     </div>
   </div>`;
 }
+
+/* ---------- Papelera: tareas, hermanos y recordatorios eliminados. Se guardan 30 días. ---------- */
+const DIAS_PAPELERA = 30;
+let filtroPap = 'tareas';
+const ahoraISO = () => new Date().toISOString();
+function itemsPapelera() {
+  const recs = [];
+  pubsActivos().forEach(p => (p.recordatorios || []).forEach(r => { if (r.eliminado) recs.push({ p, r }); }));
+  return {
+    tareas: DB.tareas.filter(t => t.borrado && !t.purgado).sort((a, b) => (b.borradoEn || '').localeCompare(a.borradoEn || '')),
+    hermanos: DB.publicadores.filter(p => p.borrado && !p.purgado).sort((a, b) => (b.borradoEn || '').localeCompare(a.borradoEn || '')),
+    recs: recs.sort((a, b) => b.r.eliminado.localeCompare(a.r.eliminado))
+  };
+}
+function totalPapelera() { const i = itemsPapelera(); return i.tareas.length + i.hermanos.length + i.recs.length; }
+function textoPapelera(iso) {
+  if (!iso) return 'Eliminada hace tiempo';
+  const d = new Date(iso), quedan = Math.max(0, DIAS_PAPELERA - Math.floor((Date.now() - d.getTime()) / 86400000));
+  return 'Eliminada el ' + d.getDate() + ' de ' + MESES[d.getMonth()] + '. Se borra ' + (quedan === 0 ? 'hoy' : 'en ' + quedan + (quedan === 1 ? ' día' : ' días'));
+}
+function filaPapelera(clave, titulo, sub) {
+  return `<div class="pap"><div class="pap-info"><div class="t">${esc(titulo)}</div><div class="sub">${esc(sub)}</div></div>
+    <button type="button" class="mini" data-pap-restaurar="${clave}">Restaurar</button>
+    <button type="button" class="mini peligro" data-pap-purgar="${clave}">Borrar</button></div>`;
+}
+function vistaPapelera() {
+  const it = itemsPapelera(), n = it.tareas.length + it.hermanos.length + it.recs.length;
+  let html = cabecera('Papelera', 'CONGREGACIÓN CHICHICAXTLE', 'var(--morado)', n + (n === 1 ? ' ELEMENTO' : ' ELEMENTOS'));
+  html += `<div class="segmentos sin-punto">${[['tareas', 'Tareas'], ['hermanos', 'Hermanos'], ['recs', 'Recordatorios']].map(([k, l]) =>
+    `<button class="segmento ${filtroPap === k ? 'activo' : ''}" data-pap-ver="${k}">${l}${it[k].length ? ' (' + it[k].length + ')' : ''}</button>`).join('')}</div>
+    <p class="ayuda" style="margin:8px 4px 0">Lo que eliminas se queda aquí ${DIAS_PAPELERA} días y después se borra solo. Mientras tanto lo puedes restaurar.</p>`;
+  const filas = filtroPap === 'tareas' ? it.tareas.map(t => filaPapelera('tarea|' + t.id, t.titulo, cargoPorId(t.cargo).nombre + '. ' + textoPapelera(t.borradoEn)))
+    : filtroPap === 'hermanos' ? it.hermanos.map(p => filaPapelera('hermano|' + p.id, nombreCorto(p), 'Grupo ' + p.grupo + '. ' + textoPapelera(p.borradoEn)))
+    : it.recs.map(x => filaPapelera('rec|' + x.p.id + '|' + x.r.id, nombreCorto(x.p) + ': ' + (x.r.texto || 'Recordatorio'), (x.r.fecha ? 'Era para el ' + fechaLarga(x.r.fecha) + '. ' : '') + textoPapelera(x.r.eliminado)));
+  html += filas.length
+    ? `<div class="panel" style="margin-top:12px;padding:2px 14px">${filas.join('')}</div><button type="button" class="mini peligro" data-pap-vaciar="1" style="margin-top:12px">Vaciar esta lista</button>`
+    : '<div class="vacio" style="margin-top:12px">No hay nada en esta lista.</div>';
+  vista.innerHTML = html;
+}
+function papRestaurar(clave) {
+  const [tipo, id, rid] = clave.split('|');
+  if (tipo === 'tarea' || tipo === 'hermano') {
+    const reg = (tipo === 'tarea' ? DB.tareas : DB.publicadores).find(x => x.id === id); if (!reg) return;
+    delete reg.borrado; delete reg.borradoEn;
+    marcarCambio(tipo === 'tarea' ? 'tareas' : 'publicadores', reg);
+    if (tipo === 'tarea') renovarVencidas();
+  } else {
+    const p = DB.publicadores.find(x => x.id === id), r = p && (p.recordatorios || []).find(x => x.id === rid); if (!r) return;
+    delete r.eliminado; marcarCambio('publicadores', p);
+  }
+  render(); toast('Restaurado');
+}
+function purgar(tipo, id, rid) {
+  if (tipo === 'tarea' || tipo === 'hermano') {
+    const reg = (tipo === 'tarea' ? DB.tareas : DB.publicadores).find(x => x.id === id);
+    if (reg) { reg.purgado = true; marcarCambio(tipo === 'tarea' ? 'tareas' : 'publicadores', reg); }
+  } else {
+    const p = DB.publicadores.find(x => x.id === id); if (!p) return;
+    p.recordatorios = (p.recordatorios || []).filter(x => x.id !== rid);
+    if (!p.recordatorios.length) delete p.recordatorios;
+    marcarCambio('publicadores', p);
+  }
+}
+function papPurgar(clave) {
+  if (!confirm('¿Borrar esto para siempre? Ya no se podrá restaurar.')) return;
+  purgar(...clave.split('|')); render(); toast('Borrado para siempre');
+}
+function papVaciar() {
+  const it = itemsPapelera();
+  const lote = filtroPap === 'tareas' ? it.tareas.map(t => ['tarea', t.id]) : filtroPap === 'hermanos' ? it.hermanos.map(p => ['hermano', p.id]) : it.recs.map(x => ['rec', x.p.id, x.r.id]);
+  if (!lote.length || !confirm('¿Borrar para siempre ' + lote.length + (lote.length === 1 ? ' elemento' : ' elementos') + '? Ya no se podrán restaurar.')) return;
+  lote.forEach(l => purgar(...l)); render(); toast('Lista vaciada');
+}
+/* Lo que lleva más de 30 días en la Papelera se borra solo. Lo eliminado antes de esta versión no tiene fecha y se queda hasta que lo borres. */
+function vaciarVencidos() {
+  const limite = Date.now() - DIAS_PAPELERA * 86400000, viejo = (iso) => iso && new Date(iso).getTime() < limite;
+  let n = 0;
+  [['tareas', DB.tareas], ['publicadores', DB.publicadores]].forEach(([tipo, lista]) => lista.forEach(x => {
+    if (x.borrado && !x.purgado && viejo(x.borradoEn)) { x.purgado = true; marcarCambio(tipo, x); n++; }
+  }));
+  DB.publicadores.forEach(p => {
+    if (!(p.recordatorios || []).some(r => viejo(r.eliminado))) return;
+    p.recordatorios = p.recordatorios.filter(r => !viejo(r.eliminado));
+    if (!p.recordatorios.length) delete p.recordatorios;
+    marcarCambio('publicadores', p); n++;
+  });
+  return n;
+}
+function marcarInsignia() { const b = $('#btnPapelera'); if (b) b.dataset.n = totalPapelera() || ''; }
 
 
 /* ---------- Fuentes: formularios y libros ---------- */
@@ -1457,13 +1610,18 @@ function vistaAjustes() {
     <button class="boton sec" id="activarAvisos">${'Notification' in window && Notification.permission === 'granted' ? 'Avisos activados' : 'Activar avisos'}</button>
   </div>`;
 
+  html += `<h2 class="titulo-seccion">Papelera</h2><div class="panel">
+    <p class="ayuda" style="font-size:13px;margin:0 0 10px">Tareas, hermanos y recordatorios eliminados. Se guardan ${DIAS_PAPELERA} días y después se borran solos.</p>
+    <a class="boton sec" href="#papelera" style="text-decoration:none">Abrir la Papelera${totalPapelera() ? ' (' + totalPapelera() + ')' : ''}</a>
+  </div>`;
+
   html += `<h2 class="titulo-seccion">Respaldo</h2><div class="panel">
     <div class="acciones">
       <button class="boton sec" id="exportar">Descargar respaldo</button>
       <button class="boton sec" id="importar">Importar archivo</button>
       <input type="file" id="archivo" accept="application/json,.json" hidden>
     </div>
-    <p class="ayuda">Importa un respaldo de esta app, datos_iniciales.json o el respaldo de la lista de necesidades anterior.</p>
+    <p class="ayuda">Importa un respaldo de esta app o el respaldo de la lista de necesidades anterior.</p>
   </div>`;
   vista.innerHTML = html;
 }
@@ -1594,7 +1752,7 @@ function agregarEntrada(reg, fecha, nota) {
 function bloqueHistorial(tipo, reg, ctx) {
   const h = (reg.historial || []).map((x, i) => ({ x, i })).sort((a, b) => (b.x.fecha || '').localeCompare(a.x.fecha || ''));
   return `<div class="hist-bloque"><span class="hist-tit">Historial (${h.length})</span>
-    ${h.length ? h.map(({ x, i }) => `<button type="button" class="renglon" data-h="${tipo}|${reg.id}|${i}|${ctx}"><span class="t">${esc(fechaLarga(x.fecha))}${x.nota ? ': ' + esc(x.nota) : ''}</span><span class="f">Editar</span></button>`).join('') : '<div class="ayuda">Todavía no hay registros.</div>'}
+    ${h.length ? h.map(({ x, i }) => `<button type="button" class="renglon" data-h="${tipo}|${reg.id}|${i}|${ctx}"><span class="t">${esc(fechaLarga(x.fecha))}${x.nota ? ': ' + esc(x.nota) : ''}${x.para ? ' (era para el ' + esc(fechaLarga(x.para)) + ')' : ''}</span><span class="f">Editar</span></button>`).join('') : '<div class="ayuda">Todavía no hay registros.</div>'}
     <button type="button" class="mini" data-h="${tipo}|${reg.id}|-1|${ctx}" style="margin-top:6px">+ Agregar registro</button></div>`;
 }
 const regPorTipo = (tipo, id) => tipo === 'tarea' ? DB.tareas.find(x => x.id === id) : DB.publicadores.find(x => x.id === id);
@@ -1624,7 +1782,7 @@ function cerrarEntrada() {
 }
 function abrirHistPub(id) {
   const p = DB.publicadores.find(x => x.id === id); if (!p) return;
-  abrirHoja(`<h3>Historial de necesidades</h3><div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(nombreCorto(p))}</div>
+  abrirHoja(`<h3>Registro de lo atendido</h3><div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(nombreCorto(p))}</div>
     ${bloqueHistorial('pub', p, 'pub')}
     <div class="acciones"><button class="boton sec" type="button" id="btnCerrar">Cerrar</button></div>`);
 }
@@ -1632,13 +1790,13 @@ let filtroHist = { q: '', cargo: '', vista: 'fecha', abiertos: [], omitidas: fal
 function todasEntradas() {
   const out = [];
   tareasTodas().forEach(t => (t.historial || []).forEach((h, i) => { if (!h.omitida || filtroHist.omitidas) out.push({ tipo: 'tarea', id: t.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: t.titulo, cargo: t.cargo, omitida: !!h.omitida }); }));
-  pubsActivos().forEach(x => (x.historial || []).forEach((h, i) => out.push({ tipo: 'pub', id: x.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', titulo: 'Necesidad: ' + nombreCorto(x), cargo: 'necesidades' })));
+  pubsActivos().forEach(x => (x.historial || []).forEach((h, i) => out.push({ tipo: 'pub', id: x.id, idx: i, fecha: h.fecha || '', nota: h.nota || '', para: h.para || '', titulo: 'Hermano: ' + nombreCorto(x), cargo: 'necesidades' })));
   return out.sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
 function tarjetaEntrada(e, conCargo) {
   const c = e.cargo === 'necesidades' ? null : cargoPorId(e.cargo);
   return `<button class="tarea" data-h="${e.tipo}|${e.id}|${e.idx}|lista" style="margin-bottom:8px"><div class="t">${esc(e.titulo)}</div>
-    <div class="meta"><span class="chip ${e.omitida ? 'ambar' : 'verde'}">${esc(fechaLarga(e.fecha))}</span>${conCargo && c ? `<span class="chip cargo" style="--c:${c.color}">${esc(c.nombre)}</span>` : ''}${e.nota ? `<span class="chip">${esc(e.nota.length > 70 ? e.nota.slice(0, 70) + '...' : e.nota)}</span>` : ''}</div></button>`;
+    <div class="meta"><span class="chip ${e.omitida ? 'ambar' : 'verde'}">${esc(fechaLarga(e.fecha))}</span>${conCargo && c ? `<span class="chip cargo" style="--c:${c.color}">${esc(c.nombre)}</span>` : ''}${e.para ? `<span class="chip">Era para el ${esc(fechaLarga(e.para))}</span>` : ''}${e.nota ? `<span class="chip">${esc(e.nota.length > 70 ? e.nota.slice(0, 70) + '...' : e.nota)}</span>` : ''}</div></button>`;
 }
 function vistaHistorial() {
   const q = normal(filtroHist.q), porCargo = filtroHist.vista === 'cargo';
@@ -1647,13 +1805,13 @@ function vistaHistorial() {
   html += `<div class="segmento"><button type="button" class="${!porCargo ? 'on' : ''}" data-vista-hist="fecha">Por fecha</button><button type="button" class="${porCargo ? 'on' : ''}" data-vista-hist="cargo">Por cargo</button></div>
     <input class="buscador" type="search" id="buscarHist" placeholder="Buscar en el historial" value="${esc(filtroHist.q)}">
     <label class="chk-omitidas"><input type="checkbox" id="chkOmitidas" ${filtroHist.omitidas ? 'checked' : ''}> Incluir las tareas omitidas</label>
-    <select class="buscador" id="filtroHistCargo"><option value="">Todos los cargos</option>${cargosOrden().map(c => `<option value="${c.id}" ${filtroHist.cargo === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}<option value="necesidades" ${filtroHist.cargo === 'necesidades' ? 'selected' : ''}>Necesidades de los publicadores</option></select>`;
-  if (!todas.length) html += '<div class="vacio" style="margin-top:12px">Todavía no hay registros. Aparecen cuando marcas algo como hecho o cuando atiendes una necesidad.</div>';
+    <select class="buscador" id="filtroHistCargo"><option value="">Todos los cargos</option>${cargosOrden().map(c => `<option value="${c.id}" ${filtroHist.cargo === c.id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}<option value="necesidades" ${filtroHist.cargo === 'necesidades' ? 'selected' : ''}>Hermanos</option></select>`;
+  if (!todas.length) html += '<div class="vacio" style="margin-top:12px">Todavía no hay registros. Aparecen cuando marcas algo como hecho o cuando registras un recordatorio de un hermano.</div>';
   if (porCargo) {
     cargosOrden().map(c => c.id).concat('necesidades').forEach(id => {
       const l = todas.filter(e => e.cargo === id);
       if (!l.length) return;
-      const c = id === 'necesidades' ? { nombre: 'Necesidades de los publicadores', color: 'var(--morado)' } : cargoPorId(id);
+      const c = id === 'necesidades' ? { nombre: 'Hermanos', color: 'var(--morado)' } : cargoPorId(id);
       const abierto = filtroHist.abiertos.includes(id) || !!filtroHist.q || !!filtroHist.cargo;
       html += `<details class="hist-cargo" data-hc="${id}" ${abierto ? 'open' : ''}><summary><span class="punto" style="background:${c.color}"></span>${esc(c.nombre)}<span class="cuenta">${l.length}</span></summary>
         ${l.slice(0, 60).map(e => tarjetaEntrada(e, false)).join('')}${l.length > 60 ? '<p class="ayuda">Se muestran los 60 más recientes de este cargo.</p>' : ''}</details>`;
@@ -1740,8 +1898,9 @@ hoja.addEventListener('submit', (e) => {
     cerrarHoja(); render(); toast('Guardado');
   }
   if (e.target.id === 'formPub') guardarPubForm(e.target);
-  if (e.target.id === 'formFicha' && fichaEd && leerFicha(true)) { cerrarHoja(); render(); toast('Guardado'); }
-  if (e.target.id === 'formNecAv' && necEd && guardarAvisosNec()) { cerrarHoja(); render(); toast('Guardado'); }
+  if (e.target.id === 'formNotas' && notasEd) { guardarNotas(); cerrarHoja(); render(); toast('Guardado'); }
+  if (e.target.id === 'formRec' && recEd && guardarRec(e.target)) { cerrarHoja(); render(); toast('Guardado'); }
+  if (e.target.id === 'formHechoRec' && hechoEd) { const m = registrarHechoRec(e.target); cerrarHoja(); render(); toast(m); }
   if (e.target.id === 'formEntrada' && entradaEd) {
     const reg = regPorTipo(entradaEd.tipo, entradaEd.id), fd = new FormData(e.target);
     if (!fd.get('fecha')) return toast('Elige el día, el mes y el año');
@@ -1754,17 +1913,13 @@ hoja.addEventListener('submit', (e) => {
 });
 hoja.addEventListener('click', (e) => {
   const id = e.target.id;
-  if (e.target.closest('[data-add-dato]')) return $('#listaDatos').insertAdjacentHTML('beforeend', filaDato({}));
-  if (e.target.closest('[data-add-aviso]')) {
-    if ($('#listaAvisos').querySelectorAll('[data-fa]').length >= MAX_AVISOS) return toast('Máximo ' + MAX_AVISOS + ' avisos');
-    return $('#listaAvisos').insertAdjacentHTML('beforeend', filaAviso(''));
-  }
-  if (e.target.closest('[data-add-rec]')) return $('#listaRecs').insertAdjacentHTML('beforeend', filaRec({ id: nuevoRecId() }));
-  if (e.target.closest('[data-quitar-fila]')) return e.target.closest('.fila-ficha').remove();
-  const rf = e.target.closest('[data-rec-hecho-f]');
-  if (rf && fichaEd) {
-    if (!leerFicha(true)) return;
-    const m = recHecho(fichaEd.p, rf.dataset.recHechoF); abrirFicha(fichaEd.p.id); render(); return toast(m || 'Guarda primero el recordatorio');
+  if (e.target.closest('[data-add-nota]')) return $('#listaNotas').insertAdjacentHTML('beforeend', filaNota({}));
+  if (e.target.closest('[data-quitar-fila]')) return e.target.closest('.fila-nota').remove();
+  const pr = e.target.closest('[data-prio]');
+  if (pr && recEd) { recEd.prio = pr.dataset.prio; pr.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === pr)); return; }
+  if (id === 'btnRecEliminar' && recEd) {
+    recEd.r.eliminado = ahoraISO(); marcarCambio('publicadores', recEd.p);
+    cerrarHoja(); render(); return toast('Recordatorio en la Papelera');
   }
   const fb = e.target.closest('[data-form]');
   if (fb) return abrirForm(fb.dataset.form);
@@ -1820,15 +1975,15 @@ hoja.addEventListener('click', (e) => {
     const t = tareaEditando.t;
     if (omitir(t)) { cerrarHoja(); render(); toast(t.tipo === 'relativa' ? 'Omitida hasta el siguiente evento' : 'Omitida. Próxima: ' + fechaLarga(t.proxima)); }
   }
-  if (id === 'btnBorrar' && tareaEditando && confirm('¿Eliminar esta tarea?')) {
-    tareaEditando.t.borrado = true;
+  if (id === 'btnBorrar' && tareaEditando && confirm('¿Mandar esta tarea a la Papelera? La puedes restaurar durante ' + DIAS_PAPELERA + ' días.')) {
+    tareaEditando.t.borrado = true; tareaEditando.t.borradoEn = ahoraISO();
     marcarCambio('tareas', tareaEditando.t);
-    cerrarHoja(); render(); toast('Tarea eliminada');
+    cerrarHoja(); render(); toast('Tarea en la Papelera');
   }
-  if (id === 'btnBorrarPub' && pubEditando && confirm('¿Quitar a este hermano de la lista?')) {
-    pubEditando.p.borrado = true;
+  if (id === 'btnBorrarPub' && pubEditando && confirm('¿Mandar a este hermano a la Papelera? Lo puedes restaurar durante ' + DIAS_PAPELERA + ' días.')) {
+    pubEditando.p.borrado = true; pubEditando.p.borradoEn = ahoraISO();
     marcarCambio('publicadores', pubEditando.p);
-    cerrarHoja(); render(); toast('Hermano quitado');
+    cerrarHoja(); render(); toast('Hermano en la Papelera');
   }
 });
 
@@ -1836,7 +1991,7 @@ hoja.addEventListener('click', (e) => {
 let pubEditando = null;
 function abrirPub(id, grupoNuevo) {
   const p = id ? DB.publicadores.find(x => x.id === id)
-    : { id: 'p' + Date.now().toString(36), grupo: Number(grupoNuevo), nombre: '', apodo: '', nombramiento: '', necesidad: '', estado: '', atendido: '' };
+    : { id: 'p' + Date.now().toString(36), grupo: Number(grupoNuevo), nombre: '', apodo: '', nombramiento: '' };
   pubEditando = { p, nuevo: !id };
   abrirHoja(`<h3>${pubEditando.nuevo ? 'Agregar hermano' : 'Editar hermano'}</h3>
   <form id="formPub">
@@ -1857,7 +2012,7 @@ function abrirPub(id, grupoNuevo) {
     <div class="acciones">
       <button class="boton" type="submit">Guardar</button>
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
-      ${!pubEditando.nuevo ? '<button class="boton peligro" type="button" id="btnBorrarPub">Quitar</button>' : ''}
+      ${!pubEditando.nuevo ? '<button class="boton peligro" type="button" id="btnBorrarPub">Eliminar</button>' : ''}
     </div>
   </form>`);
 }
@@ -1877,15 +2032,16 @@ function guardarPubForm(form) {
 
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-nec-avisos],[data-ficha],[data-rec-hecho],[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-est],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
+  const b = e.target.closest('[data-rec-editar],[data-rec-nuevo],[data-rec-hecho],[data-notas],[data-pap-ver],[data-pap-restaurar],[data-pap-purgar],[data-pap-vaciar],[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#activarAvisos,#btnDesbloquear,#btnBio');
   if (!b) return;
-  if (b.dataset.necAvisos) return abrirAvisosNec(b.dataset.necAvisos);
-  if (b.dataset.ficha) return abrirFicha(b.dataset.ficha);
-  if (b.dataset.recHecho) {
-    const [pid, rid] = b.dataset.recHecho.split('|'), p = pubPorId(pid);
-    if (p) { const m = recHecho(p, rid); render(); toast(m); }
-    return;
-  }
+  if (b.dataset.recEditar) { const [pid, rid] = b.dataset.recEditar.split('|'); return abrirRec(pid, rid); }
+  if (b.dataset.recNuevo) return abrirRec(b.dataset.recNuevo, null);
+  if (b.dataset.recHecho) { const [pid, rid] = b.dataset.recHecho.split('|'); return abrirHechoRec(pid, rid); }
+  if (b.dataset.notas) return abrirNotas(b.dataset.notas);
+  if (b.dataset.papVer) { filtroPap = b.dataset.papVer; return render(); }
+  if (b.dataset.papRestaurar) return papRestaurar(b.dataset.papRestaurar);
+  if (b.dataset.papPurgar) return papPurgar(b.dataset.papPurgar);
+  if (b.dataset.papVaciar) return papVaciar();
   if (b.dataset.ajfaltan) { ajCargos.faltan = !ajCargos.faltan; return render(); }
   if (b.dataset.omitir) {
     const que = b.dataset.omitir;
@@ -1909,21 +2065,6 @@ vista.addEventListener('click', (e) => {
   if (b.dataset.ver) { filtroNec.ver = b.dataset.ver; return render(); }
   if (b.dataset.editarPub) return abrirPub(b.dataset.editarPub);
   if (b.dataset.nuevoPub) return abrirPub(null, b.dataset.nuevoPub);
-  if (b.dataset.est) {
-    const p = DB.publicadores.find(x => x.id === b.dataset.id);
-    const nuevo = p.estado === b.dataset.est ? '' : b.dataset.est;
-    if (nuevo === 'atendido') {
-      p.atendido = hoyISO();
-      agregarEntrada(p, p.atendido, p.necesidad ? 'Atendido: ' + p.necesidad : 'Atendido');
-    } else if (p.estado === 'atendido') {
-      const h = p.historial || [], k = h.map(x => x.fecha === p.atendido && (x.nota || '').startsWith('Atendido')).lastIndexOf(true);
-      if (k >= 0) h.splice(k, 1);
-      p.atendido = '';
-    }
-    p.estado = nuevo;
-    marcarCambio('publicadores', p);
-    return render();
-  }
   switch (b.id) {
     case 'guardarConexion':
       CFG.url = $('#cfgUrl').value.trim();
@@ -1946,7 +2087,6 @@ vista.addEventListener('click', (e) => {
   }
 });
 
-let temporizadorNec = {};
 vista.addEventListener('input', (e) => {
   if (e.target.id === 'buscarNec') {
     filtroNec.q = e.target.value;
@@ -1968,21 +2108,6 @@ vista.addEventListener('input', (e) => {
     render();
     const nuevo = $('#buscarForm'); nuevo.focus(); nuevo.setSelectionRange(pos, pos);
     return;
-  }
-  const idNec = e.target.dataset.nec;
-  if (idNec) {
-    clearTimeout(temporizadorNec[idNec]);
-    temporizadorNec[idNec] = setTimeout(() => {
-      const p = DB.publicadores.find(x => x.id === idNec);
-      p.necesidad = e.target.value;
-      if (p.necesidad.trim() && !p.estado) {
-        p.estado = 'pendiente';
-        const tarjeta = e.target.closest('.pub');
-        tarjeta.classList.add('pendiente');
-        tarjeta.querySelector('[data-est="pendiente"]').classList.add('on-pendiente');
-      }
-      marcarCambio('publicadores', p);
-    }, 600);
   }
 });
 vista.addEventListener('change', (e) => {
@@ -2053,7 +2178,7 @@ function importar(file) {
       let n = 0;
       Object.entries(datos).forEach(([id, v]) => {
         const p = DB.publicadores.find(x => x.id === id);
-        if (p && v && v.texto && v.texto.trim()) { p.necesidad = v.texto; p.estado = p.estado || 'pendiente'; marcarCambio('publicadores', p); n++; }
+        if (p && v && v.texto && v.texto.trim()) { (p.notas = p.notas || []).push({ id: nuevoId('n'), titulo: 'Necesidad', texto: v.texto.trim() }); marcarCambio('publicadores', p); n++; }
       });
       toast(n ? n + ' necesidades importadas' : 'No se encontraron necesidades que coincidan');
     }
@@ -2097,6 +2222,7 @@ function normalizar() {
       if (!SUCIOS.tareas.includes(t.id)) SUCIOS.tareas.push(t.id);
     }
   });
+  migrarHermanos();
 }
 
 function paquete() {
@@ -2185,7 +2311,8 @@ document.addEventListener('visibilitychange', () => {
   } else {
     if (ocultaDesde && Date.now() - ocultaDesde > MINUTOS_PARA_BLOQUEAR * 60000) bloquear();
     ocultaDesde = null;
-    if (renovarVencidas()) render();
+    const caducados = vaciarVencidos();
+    if (renovarVencidas() || caducados) render();
     sincronizar(false);
   }
 });
@@ -2284,6 +2411,7 @@ function vistaBloqueo() {
 function render() {
   document.body.classList.toggle('bloqueada', bloqueada);
   if (bloqueada) return vistaBloqueo();
+  marcarInsignia();
   const h = (location.hash || '#inicio').slice(1);
   const [ruta, param] = h.split('/');
   // El acceso directo "Colores de JW Library" abre con #colores: se muestra Inicio con la hoja de colores encima.
@@ -2293,6 +2421,7 @@ function render() {
   if (ruta === 'cargos') vistaCargos();
   else if (ruta === 'cargo' && param) vistaCargo(param);
   else if (ruta === 'necesidades') vistaNecesidades(param);
+  else if (ruta === 'papelera') vistaPapelera();
   else if (ruta === 'proximas') vistaProximas();
   else if (ruta === 'historial') vistaHistorial();
   else if (ruta === 'formularios') vistaFormularios();
@@ -2328,9 +2457,9 @@ function toast(msg) {
 }
 
 /* ================= Inicio ================= */
-normalizar(); guardarLocal(); renovarVencidas();
+normalizar(); vaciarVencidos(); guardarLocal(); renovarVencidas();
 render();
-{ const n = pendientesHermanos().filter(x => x.fecha <= hoyISO()).length; if (n) toast(n === 1 ? 'Tienes 1 pendiente de hermanos para hoy o atrasado' : 'Tienes ' + n + ' pendientes de hermanos para hoy o atrasados'); }
+{ const n = pendientesHermanos().filter(x => x.fecha <= hoyISO()).length; if (n) toast(n === 1 ? 'Tienes 1 recordatorio de hermanos para hoy o atrasado' : 'Tienes ' + n + ' recordatorios de hermanos para hoy o atrasados'); }
 revisarRecordatorios();
 sincronizar(false);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
