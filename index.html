@@ -435,14 +435,19 @@ aplicarTema();
     box-shadow: var(--vidrio), 0 12px 30px -10px rgba(0,0,0,.3);
   }
   /* Prioridad, notas y recordatorios de los hermanos */
-  .prio { flex: none; width: 10px; height: 10px; border-radius: 50%; align-self: center; margin-right: 10px; background: var(--gris-suave); }
-  .prio.alta { background: var(--rojo-t); box-shadow: 0 0 0 3px var(--rojo-bg); }
-  .prio.media { background: var(--ambar-t); }
+  /* Prioridad con etiqueta y color fuerte: rojo urgente, amarillo media, verde baja (iguales en claro y oscuro) */
+  .prio { flex: none; align-self: center; margin-right: 10px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 1.2; white-space: nowrap; }
+  .prio.alta { background: #D32F2F; color: #FFFFFF; }
+  .prio.media { background: #F5B800; color: #2B2100; }
+  .prio.baja { background: #2E9E5B; color: #FFFFFF; }
+  div.segmento button.prio-alta.on { background: #D32F2F; color: #FFFFFF; }
+  div.segmento button.prio-media.on { background: #F5B800; color: #2B2100; }
+  div.segmento button.prio-baja.on { background: #2E9E5B; color: #FFFFFF; }
   .renglon:has(.prio) { justify-content: flex-start; align-items: center; }
   .renglon:has(.prio) .t { flex: 1; min-width: 0; }
   @media (max-width: 559px) {
     .renglon:has(.prio) { flex-wrap: wrap; row-gap: 2px; }
-    .renglon:has(.prio) .f { flex-basis: 100%; padding-left: 20px; }
+    .renglon:has(.prio) .f { flex-basis: 100%; padding-left: 0; }
   }
   .recs-pub { margin-top: 10px; padding: 0 12px; border-radius: 18px; background: var(--caja); }
   .notas-pub { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
@@ -565,7 +570,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '10 nov 2026, 21:20';
+const VERSION_APP = '10 nov 2026, 21:30';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1103,7 +1108,8 @@ function vistaCargo(id) {
 }
 
 /* ---------- Hermanos: notas permanentes y recordatorios con prioridad ---------- */
-const PRIORIDADES = [['alta', 'Alta'], ['media', 'Media'], ['baja', 'Baja']];
+const PRIORIDADES = [['alta', 'Urgente'], ['media', 'Media'], ['baja', 'Baja']];
+const textoPrio = (k) => (PRIORIDADES.find(([v]) => v === k) || PRIORIDADES[1])[1];
 const ORDEN_PRIO = { alta: 0, media: 1, baja: 2 };
 const ATIENDE = [['cuerpo', 'Cuerpo de ancianos'], ['ambos', 'Abrahán y Yaky'], ['abrahan', 'Abrahán'], ['yaky', 'Yaky']];
 const textoAtiende = (k) => (ATIENDE.find(([v]) => v === k) || [])[1] || '';
@@ -1135,7 +1141,7 @@ function renglonHermano(x, conNombre = true) {
   const txt = x.texto.length > 90 ? x.texto.slice(0, 88) + '…' : x.texto;
   const quien = conNombre ? `<b>${esc(nombreCorto(x.p))}</b>${txt ? ': ' : ''}` : '';
   const meta = [x.atiende ? 'Lo atiende: ' + x.atiende : '', x.con.length ? 'Con: ' + x.con.join(', ') : ''].filter(Boolean).join(' · ');
-  return `<div class="rec-pub"><button class="renglon" data-rec-editar="${x.p.id}|${x.r.id}"><span class="prio ${x.prio}" title="Prioridad ${x.prio}"></span><span class="t">${quien}${esc(txt)}${meta ? `<span class="meta-rec">${esc(meta)}</span>` : ''}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
+  return `<div class="rec-pub"><button class="renglon" data-rec-editar="${x.p.id}|${x.r.id}"><span class="prio ${x.prio}">${textoPrio(x.prio)}</span><span class="t">${quien}${esc(txt)}${meta ? `<span class="meta-rec">${esc(meta)}</span>` : ''}</span><span class="f ${c.cls}">${esc(c.txt)}</span></button>
     <button type="button" class="mini" data-rec-hecho="${x.p.id}|${x.r.id}">Hecho</button></div>`;
 }
 const panelHermanos = (l, conNombre = true) => `<div class="panel" style="padding:2px 12px">${l.map(x => renglonHermano(x, conNombre)).join('')}</div>`;
@@ -1166,7 +1172,7 @@ function abrirRec(pid, rid) {
     <div class="campo"><span>Fecha (opcional)</span>${selectorFecha('fecha', r.fecha)}<div class="ayuda">Sin fecha queda como pendiente abierto en Inicio, hasta que lo marques como hecho.</div></div>
     <label class="campo"><span>Hora (opcional)</span><input type="time" name="hora" value="${esc(r.hora || '')}">
       <div class="ayuda">Con hora te llega un correo a esa hora. Sin hora, va en el resumen de las 9.</div></label>
-    <div class="campo"><span>Prioridad</span><div class="segmento" style="margin:0">${PRIORIDADES.map(([k, l]) => `<button type="button" class="${recEd.prio === k ? 'on' : ''}" data-prio="${k}">${l}</button>`).join('')}</div></div>
+    <div class="campo"><span>Prioridad</span><div class="segmento" style="margin:0">${PRIORIDADES.map(([k, l]) => `<button type="button" class="prio-${k} ${recEd.prio === k ? 'on' : ''}" data-prio="${k}">${l}</button>`).join('')}</div></div>
     <div class="campo"><span>Lo atiende</span><div class="segmento seg-envuelve" style="margin:0">${[['', 'Sin indicar'], ...ATIENDE].map(([k, l]) => `<button type="button" class="${recEd.atiende === k ? 'on' : ''}" data-atiende="${k}">${l}</button>`).join('')}</div></div>
     <div class="campo"><span>Con otros hermanos (opcional)</span><div id="conRec">${bloqueConRec()}</div>
       <div class="ayuda">Por ejemplo, familiares, para planear la visita o la ayuda junto con ellos. El recordatorio también se ve en su tarjeta.</div></div>
