@@ -558,6 +558,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
+const VERSION_APP = '10 nov 2026, 20:30';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1654,6 +1655,7 @@ function vistaAjustes() {
     </div>
     <p class="ayuda">Importa un respaldo de esta app, el respaldo de la lista de necesidades anterior o una lista de hermanos (grupo, nombramiento y precursorado).</p>
   </div>`;
+  html += `<p class="ayuda" style="text-align:center;margin:18px 0 0">Versión de la app: ${VERSION_APP}</p>`;
   vista.innerHTML = html;
 }
 
