@@ -1,13 +1,13 @@
 {
-  "name": "JWCore",
-  "short_name": "JWCore",
+  "name": "JW Mainframe",
+  "short_name": "JW Mainframe",
   "description": "Pendientes, responsabilidades y necesidades de la congregación Chichicaxtle",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#EEF6FA",
-  "theme_color": "#0A6A8C",
+  "background_color": "#F4F1FA",
+  "theme_color": "#5B3FA8",
   "lang": "es",
   "icons": [
     {

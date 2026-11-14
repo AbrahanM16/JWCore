@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#EEF6FA">
+<meta name="theme-color" content="#F4F1FA">
 <script>
 const LS_TEMA = 'ancianos_pwa_tema_v1';
 const oscuroSistema = window.matchMedia('(prefers-color-scheme: dark)');
@@ -14,51 +14,51 @@ function aplicarTema() {
   const m = modoTema();
   const oscuro = m === 'oscuro' || (m === 'auto' && oscuroSistema.matches);
   document.documentElement.dataset.tema = oscuro ? 'oscuro' : 'claro';
-  document.querySelector('meta[name="theme-color"]').content = oscuro ? '#000000' : '#EEF6FA';
+  document.querySelector('meta[name="theme-color"]').content = oscuro ? '#000000' : '#F4F1FA';
 }
 function guardarTema(m) { try { localStorage.setItem(LS_TEMA, m); } catch (e) {} aplicarTema(); }
 oscuroSistema.addEventListener('change', aplicarTema);
 aplicarTema();
 </script>
-<title>JWCore</title>
+<title>JW Mainframe</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Los nombres de las variables vienen de la versión anterior: navy es el color principal oscuro y dorado el de acento, ahora en aqua */
-    --navy: #0A6A8C; --morado: #3A7CA5; --dorado: #1BA8D6;
+    /* Los nombres de las variables vienen de versiones anteriores: navy es el color principal, morado el secundario y dorado el de acento; hoy los tres son violeta */
+    --navy: #5B3FA8; --morado: #7B5CC4; --dorado: #8B6CE0;
     --rojo: #B3261E; --ambar: #B7791F; --verde: #1F8F63;
-    --hero-a: #2BB2DC; --hero-z: #08385A; --lema: #D2F3FC;
-    --tinta: #14222C; --texto: #36454F; --gris: #5A6872; --gris-suave: #8693A0;
-    --navy-t: #0A6383; --rojo-t: #B3261E; --ambar-t: #9A6416; --verde-t: #1B7F57; --dorado-t: #0A7299; --sobre-dorado: #032838;
-    --rojo-bg: rgba(179,38,30,.10); --ambar-bg: rgba(183,121,31,.13); --verde-bg: rgba(31,143,99,.12); --chip-bg: rgba(20,34,44,.06);
-    --fondo: #EEF6FA;
-    --g1: rgba(43,178,220,.22); --g2: rgba(140,206,245,.28); --g3: rgba(80,130,225,.12);
-    --panel: rgba(255,255,255,.62); --caja: rgba(20,34,44,.045); --campo: rgba(255,255,255,.8); --linea: rgba(20,34,44,.11);
+    --hero-a: #8E6FE6; --hero-z: #2C1A5E; --lema: #E7DEFB;
+    --tinta: #1C1630; --texto: #3D3552; --gris: #62596F; --gris-suave: #918AA0;
+    --navy-t: #5434A0; --rojo-t: #B3261E; --ambar-t: #9A6416; --verde-t: #1B7F57; --dorado-t: #6B45C4; --sobre-dorado: #1E0E45;
+    --rojo-bg: rgba(179,38,30,.10); --ambar-bg: rgba(183,121,31,.13); --verde-bg: rgba(31,143,99,.12); --chip-bg: rgba(28,22,48,.06);
+    --fondo: #F4F1FA;
+    --g1: rgba(139,108,224,.22); --g2: rgba(190,165,245,.28); --g3: rgba(110,80,200,.12);
+    --panel: rgba(255,255,255,.62); --caja: rgba(28,22,48,.045); --campo: rgba(255,255,255,.8); --linea: rgba(28,22,48,.11);
     --brillo: rgba(255,255,255,.95); --borde: rgba(255,255,255,.6);
-    --sombra: 0 12px 32px -14px rgba(10,48,80,.26), 0 2px 6px -3px rgba(10,48,80,.10);
-    --barra: rgba(246,250,253,.75); --hoja-bg: rgba(249,252,254,.92); --velo: rgba(6,24,40,.32);
-    --pulsar: rgba(10,106,140,.07); --seg-bg: rgba(118,118,128,.12); --seg-on: #FFFFFF; --pill-on: rgba(255,255,255,.85);
-    --mezcla: #000; --toast-bg: rgba(249,252,254,.94);
+    --sombra: 0 12px 32px -14px rgba(40,20,90,.26), 0 2px 6px -3px rgba(40,20,90,.10);
+    --barra: rgba(248,246,253,.75); --hoja-bg: rgba(251,249,254,.92); --velo: rgba(18,8,40,.32);
+    --pulsar: rgba(91,63,168,.07); --seg-bg: rgba(118,118,128,.12); --seg-on: #FFFFFF; --pill-on: rgba(255,255,255,.85);
+    --mezcla: #000; --toast-bg: rgba(251,249,254,.94);
     --vidrio: inset 0 1px 0 var(--brillo), inset 0 0 0 1px var(--borde);
-    --sombra-aqua: rgba(10,48,80,.42);
+    --sombra-aqua: rgba(40,20,90,.42);
     --curva: cubic-bezier(.32,.72,0,1);
     color-scheme: light;
   }
   /* Modo oscuro: negro puro de fondo para pantallas OLED */
   :root[data-tema="oscuro"] {
-    --dorado: #3CC4EC; --hero-a: #1A86B0; --hero-z: #03202F; --lema: #C6EEFA;
-    --tinta: #EEF6F7; --texto: #CFDDE0; --gris: #A3B5B9; --gris-suave: #7B8D91;
-    --navy-t: #7AD3F2; --rojo-t: #FF8A80; --ambar-t: #F0B65A; --verde-t: #5FD6A5; --dorado-t: #86DDF7; --sobre-dorado: #032A30;
+    --dorado: #A98BFF; --hero-a: #6A4BC2; --hero-z: #1A0E3A; --lema: #E0D6FA;
+    --tinta: #F2EFF8; --texto: #D8D2E6; --gris: #B0A9C2; --gris-suave: #8A839C;
+    --navy-t: #BCA6FF; --rojo-t: #FF8A80; --ambar-t: #F0B65A; --verde-t: #5FD6A5; --dorado-t: #C9B8FF; --sobre-dorado: #1B0E3F;
     --rojo-bg: rgba(255,138,128,.14); --ambar-bg: rgba(240,182,90,.14); --verde-bg: rgba(95,214,165,.14); --chip-bg: rgba(255,255,255,.08);
     --fondo: #000000; --g1: transparent; --g2: transparent; --g3: transparent;
     --panel: rgba(255,255,255,.07); --caja: rgba(255,255,255,.06); --campo: rgba(255,255,255,.08); --linea: rgba(255,255,255,.11);
     --brillo: rgba(255,255,255,.10); --borde: rgba(255,255,255,.06); --sombra: none;
-    --barra: rgba(20,22,22,.78); --hoja-bg: rgba(16,20,21,.96); --velo: rgba(0,0,0,.66);
+    --barra: rgba(22,20,28,.78); --hoja-bg: rgba(20,17,28,.96); --velo: rgba(0,0,0,.66);
     --pulsar: rgba(255,255,255,.06); --seg-bg: rgba(118,118,128,.24); --seg-on: rgba(255,255,255,.18); --pill-on: rgba(255,255,255,.14);
-    --mezcla: #fff; --toast-bg: rgba(38,42,43,.96);
+    --mezcla: #fff; --toast-bg: rgba(40,36,48,.96);
     --sombra-aqua: rgba(0,0,0,.6);
     color-scheme: dark;
   }
@@ -597,8 +597,21 @@ aplicarTema();
   .pred-meta { display: flex; flex-wrap: wrap; gap: 5px; margin: -4px 0 8px; }
   .pred-dir { font-size: 14.5px; color: var(--texto); overflow-wrap: anywhere; }
   .pred-notas { margin-top: 12px; padding: 10px 14px; border-radius: 18px; background: var(--caja); font-size: 13.5px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
-  .pred-mapa { margin-top: 10px; overflow: hidden; border-radius: 18px; box-shadow: var(--vidrio); }
-  .pred-mapa iframe { display: block; width: 100%; height: 280px; border: 0; }
+  .mapa-sel { position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column; }
+  .mapa-sel, .mapa-top, .mapa-busca, .mapa-pie { background: linear-gradient(var(--panel), var(--panel)), var(--fondo); }
+  .mapa-top { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 8px; }
+  .mapa-top .redondo svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .mapa-tit { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mapa-busca { display: flex; align-items: center; gap: 8px; padding: 0 14px 10px; }
+  .mapa-busca .buscador { flex: 1; min-width: 0; margin: 0; }
+  .mapa-sel.ver .mapa-busca { display: none; }
+  #mapaLienzo { flex: 1; min-height: 0; background: #dfe7ec; }
+  .mapa-pie { padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -6px 20px rgba(0, 0, 0, .1); position: relative; z-index: 2; }
+  .mapa-capas { margin: 0; }
+  .mapa-pie .acciones { margin-top: 8px; }
+  .mapa-pie .boton:disabled { opacity: .45; }
+  .pin-mapa { background: none; border: 0; }
+  .pin-mapa svg { display: block; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .35)); }
   .pred-hm { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .pred-hm input { width: 100%; min-height: 44px; }
   .pred-sumar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
@@ -608,13 +621,14 @@ aplicarTema();
     .redondo { width: 35px; height: 35px; }
     .marca { gap: 8px; font-size: 16px; }
   }
+  @media (max-width: 520px) { .marca span { display: block; width: min-content; font-size: 13.5px; line-height: 1.05; } }
   @media (max-width: 379px) { .marca span { display: none; } }
 </style>
 </head>
 <body>
 
 <header class="barra-sup"><div class="dentro">
-  <a class="marca" href="#inicio"><img src="icon-192.png" alt=""><span>JWCore</span></a>
+  <a class="marca" href="#inicio"><img src="icon-192.png" alt=""><span>JW Mainframe</span></a>
   <div class="acciones-sup">
     <a class="redondo" id="btnSemana" href="#semana" aria-label="Mi semana"><svg stroke-width="1.9" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></a>
     <a class="redondo" id="btnPred" href="#predicacion" aria-label="Predicación"><svg stroke-width="1.9" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></a>
@@ -684,7 +698,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '13 nov 2026, 00:30';
+const VERSION_APP = '13 nov 2026, 19:15';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1066,7 +1080,7 @@ function vistaInicio() {
   const recsHermanos = pendientesHermanos().length;
 
   const hoyD = new Date();
-  let html = cabecera('JWCore', DIAS_SEM[hoyD.getDay()] + ', ' + hoyD.getDate() + ' de ' + MESES[hoyD.getMonth()], 'var(--navy)', '', '<div class="sub2">Congregación Chichicaxtle</div>');
+  let html = cabecera('JW Mainframe', DIAS_SEM[hoyD.getDay()] + ', ' + hoyD.getDate() + ' de ' + MESES[hoyD.getMonth()], 'var(--navy)', '', '<div class="sub2">Congregación Chichicaxtle</div>');
 
   if (!DB.tareas.length) {
     html += `<div class="panel"><b>Aún no hay datos.</b><p class="ayuda" style="font-size:13.5px;margin-top:6px">Conecta tu hoja de Google en Ajustes para cargar tareas y hermanos.</p>
@@ -2786,6 +2800,7 @@ function unirHoras(l, r) {
 function nuevoContacto() {
   return { id: nuevoId('c'), nombre: '', direccion: '', territorio: '', tipo: 'revisita', notas: '', lat: null, lng: null, mapaUrl: '', recordatorios: [], visitas: [], creado: hoyISO() };
 }
+const horaAhora = () => { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
 const contactoPorId = (id) => DB.contactos.find(c => c.id === id && !c.borrado);
 const tieneCoord = (c) => typeof c.lat === 'number' && typeof c.lng === 'number';
 function ultimaVisita(c) { return (c.visitas || []).reduce((m, v) => v.fecha > m ? v.fecha : m, ''); }
@@ -2825,10 +2840,6 @@ function enlaceRuta(c) {
   if (tieneCoord(c)) return 'https://www.google.com/maps/dir/?api=1&destination=' + c.lat + ',' + c.lng;
   if (c.direccion) return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(c.direccion);
   return c.mapaUrl || '';
-}
-function enlaceIncrustado(c) {
-  const q = tieneCoord(c) ? c.lat + ',' + c.lng : c.direccion;
-  return q ? 'https://maps.google.com/maps?q=' + encodeURIComponent(q) + '&z=17&output=embed' : '';
 }
 function coordValida(lat, lng) { return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180; }
 /* Acepta coordenadas escritas, un enlace largo de Google Maps o un enlace corto (este último solo se puede abrir, no mostrar aquí dentro) */
@@ -2985,15 +2996,14 @@ function abrirContacto(id) {
   const c = contactoPorId(id);
   if (!c) return cerrarHoja();
   prVer = id;
-  const enl = enlaceMapa(c), ruta = enlaceRuta(c), emb = enlaceIncrustado(c);
+  const enl = enlaceMapa(c), ruta = enlaceRuta(c);
   const recs = (c.recordatorios || []).slice().sort(ordenVisita);
   const vis = (c.visitas || []).slice().sort((a, b) => (b.fecha + (b.hora || '')).localeCompare(a.fecha + (a.hora || '')));
   abrirHoja(`<h3>${esc(c.nombre)}</h3>
     <div class="meta pred-meta"><span class="chip ${c.tipo === 'curso' ? 'verde' : ''}">${c.tipo === 'curso' ? 'Curso' : 'Revisita'}</span>${c.territorio ? `<span class="chip">Territorio ${esc(c.territorio)}</span>` : ''}${c.archivado ? '<span class="chip ambar">Archivado</span>' : ''}${c.cursoDesde ? `<span class="chip">Curso desde el ${esc(fechaLarga(c.cursoDesde))}</span>` : ''}</div>
     ${c.direccion ? `<p class="pred-dir">${esc(c.direccion)}</p>` : ''}
     <p class="ayuda" style="margin:6px 0 0">${esc(textoUltima(c))}</p>
-    ${enl ? `<div class="acciones pred-acc"><a class="boton" href="${esc(enl)}" target="_blank" rel="noopener">Abrir en Google Maps</a>${ruta ? `<a class="boton sec" href="${esc(ruta)}" target="_blank" rel="noopener">Cómo llegar</a>` : ''}${emb ? '<button type="button" class="boton sec" data-pred="verMapa">Ver mapa aquí</button>' : ''}</div>
-    <div id="prMapa"></div>` : ''}
+    <div class="acciones pred-acc">${enl ? `<a class="boton" href="${esc(enl)}" target="_blank" rel="noopener">Abrir en Google Maps</a>` : ''}${ruta ? `<a class="boton sec" href="${esc(ruta)}" target="_blank" rel="noopener">Cómo llegar</a>` : ''}<button type="button" class="boton sec" data-pred="verMapa">${tieneCoord(c) ? 'Ver mapa aquí' : 'Poner pin en el mapa'}</button></div>
     ${tieneCoord(c) || c.mapaUrl ? `<p class="ayuda" style="margin-top:4px">${esc(textoUbicacion(c))}</p>` : ''}
     ${c.notas ? `<div class="pred-notas">${esc(c.notas)}</div>` : ''}
     <h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:17px">Recordatorios de visita<span class="cuenta">${recs.length}</span></h2>
@@ -3001,7 +3011,7 @@ function abrirContacto(id) {
       <div class="acciones pred-acc"><button type="button" class="mini on-filtro" data-pred="completar|${esc(c.id)}|${esc(r.id)}|c">Completar</button><button type="button" class="mini" data-pred="recEditar|${esc(c.id)}|${esc(r.id)}|c">Editar</button></div></div>`).join('') : '<div class="vacio" style="padding:10px 14px">No hay visitas planeadas.</div>'}
     <div class="acciones"><button type="button" class="boton sec" data-pred="recNuevo|${esc(c.id)}|c">+ Recordatorio</button><button type="button" class="boton sec" data-pred="visitaNueva|${esc(c.id)}">Registrar visita ya hecha</button></div>
     <h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:17px">Historial de visitas<span class="cuenta">${vis.length}</span></h2>
-    ${vis.length ? vis.map(v => `<button type="button" class="pred-item pred-btn" data-pred="visitaEditar|${esc(c.id)}|${esc(v.id)}"><div class="pred-ih"><b>${esc(fechaLarga(v.fecha))}${v.hora ? ', ' + esc(v.hora) : ''}</b>${v.curso ? '<span class="chip verde">Curso</span>' : ''}</div>${v.nota ? `<div class="d">${esc(v.nota)}</div>` : ''}</button>`).join('') : '<div class="vacio" style="padding:10px 14px">Todavía no hay visitas registradas.</div>'}
+    ${vis.length ? vis.map(v => `<button type="button" class="pred-item pred-btn" data-pred="visitaEditar|${esc(c.id)}|${esc(v.id)}"><div class="pred-ih"><b>${esc(fechaLarga(v.fecha))}${v.hora ? ', ' + esc(v.hora) : ''}</b><span class="meta" style="margin:0">${v.primera ? '<span class="chip">Primera conversación</span>' : ''}${v.curso ? '<span class="chip verde">Curso</span>' : ''}</span></div>${v.nota ? `<div class="d">${esc(v.nota)}</div>` : ''}</button>`).join('') : '<div class="vacio" style="padding:10px 14px">Todavía no hay visitas registradas.</div>'}
     <div class="acciones" style="margin-top:16px"><button type="button" class="boton sec" data-pred="editarC|${esc(c.id)}">Editar datos</button>
       ${c.archivado ? '' : c.tipo === 'revisita' ? `<button type="button" class="boton verde" data-pred="aCurso|${esc(c.id)}">Pasar a curso</button>` : `<button type="button" class="boton sec" data-pred="aRevisita|${esc(c.id)}">Pasar a revisita</button>`}
       ${c.archivado ? `<button type="button" class="boton sec" data-pred="restaurar|${esc(c.id)}">Restaurar</button><button type="button" class="boton peligro" data-pred="eliminarC|${esc(c.id)}">Eliminar</button>` : `<button type="button" class="boton sec" data-pred="archivar|${esc(c.id)}">Archivar</button>`}
@@ -3019,13 +3029,16 @@ function abrirContactoForm(id) {
       <label class="campo"><span>Número de territorio</span><input name="territorio" maxlength="20" value="${esc(c.territorio)}" placeholder="Ej. 12" autocomplete="off"></label>
       <label class="campo"><span>Dirección</span><input name="direccion" maxlength="300" value="${esc(c.direccion)}" placeholder="Calle, número, referencias" autocomplete="off"></label>
       <label class="campo"><span>Notas</span><textarea name="notas" maxlength="${PR_MAX_TXT * 2}" placeholder="Intereses, preguntas, mejor hora para visitarlo">${esc(c.notas)}</textarea></label>
+      ${id ? '' : `<div class="campo"><span>Primera conversación</span><div class="pred-hm"><input type="date" name="primeraFecha" required value="${hoyISO()}"><input type="time" name="primeraHora" value="${horaAhora()}"></div>
+        <input name="primeraNota" maxlength="200" placeholder="Qué platicaron (opcional)" style="margin-top:8px" autocomplete="off">
+        <div class="ayuda">Se guarda como la primera visita del historial, con el día y la hora de ahora. Puedes cambiarlos si fue antes.</div></div>`}
       <div class="campo"><span>Ubicación exacta</span>
         <input type="hidden" name="lat" value="${tieneCoord(c) ? c.lat : ''}"><input type="hidden" name="lng" value="${tieneCoord(c) ? c.lng : ''}"><input type="hidden" name="mapaUrl" value="${esc(c.mapaUrl || '')}">
         <div class="ayuda" id="prUbiEstado" style="margin:0 0 8px 6px">${esc(textoUbicacion(c))}</div>
-        <div class="acciones" style="margin-top:0"><button type="button" class="boton sec" data-pred="gps">Usar mi ubicación actual</button><button type="button" class="boton sec" data-pred="ubiBuscar">Buscar en Google Maps</button>${tieneCoord(c) || c.mapaUrl ? '<button type="button" class="boton peligro" data-pred="ubiQuitar">Quitar</button>' : ''}</div>
+        <div class="acciones" style="margin-top:0"><button type="button" class="boton" data-pred="elegirMapa">Elegir en el mapa</button><button type="button" class="boton sec" data-pred="gps">Usar mi ubicación actual</button><button type="button" class="boton sec" data-pred="ubiBuscar">Buscar en Google Maps</button>${tieneCoord(c) || c.mapaUrl ? '<button type="button" class="boton peligro" data-pred="ubiQuitar">Quitar</button>' : ''}</div>
         <input id="prUbiTexto" type="text" inputmode="url" placeholder="O pega aquí un enlace de Google Maps o las coordenadas" autocomplete="off" style="margin-top:8px">
         <button type="button" class="mini" style="margin-top:8px" data-pred="ubiPegar">Guardar lo pegado</button>
-        <div class="ayuda">En Google Maps deja presionado el punto, toca las coordenadas y cópialas, o usa Compartir y copia el enlace. Un enlace corto (maps.app.goo.gl) se guarda y se abre en Google Maps, pero solo con coordenadas o con tu ubicación se ve el mapa dentro de la app.</div></div>
+        <div class="ayuda">En Google Maps deja presionado el punto, toca las coordenadas y cópialas, o usa Compartir y copia el enlace. Un enlace corto (maps.app.goo.gl) se guarda y se abre en Google Maps; para verlo en el mapa de la app, elige el punto con Elegir en el mapa.</div></div>
       <div class="acciones"><button class="boton" type="submit">Guardar</button><button class="boton sec" type="button" data-pred="${id ? 'ver|' + esc(id) : 'cerrar'}">Cancelar</button></div>
     </form>`);
 }
@@ -3091,6 +3104,121 @@ function abrirConvertir(cid, mes) {
     </form>`);
 }
 
+/* ---------- Mapa para elegir o ver la ubicación (Leaflet, calles de OpenStreetMap o satélite) ---------- */
+const LS_MAPA = 'ancianos_pwa_mapa_v1';
+let mapaEd = null;
+const PIN_SVG = '<svg viewBox="0 0 34 44" width="34" height="44" aria-hidden="true"><path d="M17 43C17 43 3 28 3 16a14 14 0 0 1 28 0c0 12-14 27-14 27Z" fill="#D8483B" stroke="#fff" stroke-width="2.5"/><circle cx="17" cy="16" r="5.5" fill="#fff"/></svg>';
+async function cargarLeaflet() {
+  if (window.L) return;
+  if (!document.getElementById('leafletCss')) {
+    const l = document.createElement('link');
+    l.id = 'leafletCss'; l.rel = 'stylesheet'; l.href = 'mapa/leaflet.css';
+    document.head.appendChild(l);
+  }
+  await cargarScript('mapa/leaflet.js');
+}
+function cerrarMapa() {
+  if (!mapaEd) return;
+  const m = mapaEd; mapaEd = null;
+  if (m.mapa) m.mapa.remove();
+  m.ov.remove();
+}
+function mapaTexto() {
+  const m = mapaEd, t = $('#mapaTxt');
+  if (!m || !t) return;
+  const p = m.pin ? m.pin.lat.toFixed(5) + ', ' + m.pin.lng.toFixed(5) : '';
+  t.textContent = m.modo === 'elegir' ? (p ? 'Pin en ' + p + '. Toca otro lugar o arrástralo para ajustarlo.' : 'Toca el mapa para poner el pin en el lugar exacto.') : 'Ubicación guardada: ' + p;
+  const usar = $('#mapaSel [data-m="usar"]');
+  if (usar) usar.disabled = !m.pin;
+}
+function mapaPie() {
+  const m = mapaEd, acc = $('#mapaAcc');
+  m.ov.classList.toggle('ver', m.modo === 'ver');
+  acc.innerHTML = m.modo === 'elegir'
+    ? '<button type="button" class="boton" data-m="usar">Usar este punto</button><button type="button" class="boton sec" data-m="gps">Mi ubicación</button><button type="button" class="boton sec" data-m="cerrar">Cancelar</button>'
+    : `${m.op.enlace ? `<a class="boton" href="${esc(m.op.enlace)}" target="_blank" rel="noopener">Abrir en Google Maps</a>` : ''}<button type="button" class="boton sec" data-m="mover">Mover pin</button><button type="button" class="boton sec" data-m="cerrar">Cerrar</button>`;
+  if (m.marker) m.modo === 'elegir' ? m.marker.dragging.enable() : m.marker.dragging.disable();
+  mapaTexto();
+}
+function mapaPonerPin(lat, lng) {
+  const m = mapaEd;
+  m.pin = { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 };
+  if (!m.marker) {
+    m.marker = L.marker([lat, lng], { draggable: m.modo === 'elegir', icon: L.divIcon({ className: 'pin-mapa', html: PIN_SVG, iconSize: [34, 44], iconAnchor: [17, 44] }) }).addTo(m.mapa);
+    m.marker.on('dragend', () => { const q = m.marker.getLatLng(); m.pin = { lat: Math.round(q.lat * 1e6) / 1e6, lng: Math.round(q.lng * 1e6) / 1e6 }; mapaTexto(); });
+  } else m.marker.setLatLng([lat, lng]);
+  mapaTexto();
+}
+function mapaCapa(nombre) {
+  const m = mapaEd;
+  Object.keys(m.capas).forEach(k => { if (k === nombre) m.capas[k].addTo(m.mapa); else m.mapa.removeLayer(m.capas[k]); });
+  m.ov.querySelectorAll('[data-m^="capa|"]').forEach(b => b.classList.toggle('on', b.dataset.m === 'capa|' + nombre));
+  try { localStorage.setItem(LS_MAPA, nombre); } catch (e) {}
+}
+function mapaGPS(poner) {
+  const m = mapaEd;
+  if (!navigator.geolocation) return poner && toast('Este dispositivo no permite obtener la ubicación');
+  if (poner) toast('Buscando tu ubicación...', 6000);
+  navigator.geolocation.getCurrentPosition(
+    p => { if (mapaEd !== m) return; m.mapa.setView([p.coords.latitude, p.coords.longitude], 18); if (poner) mapaPonerPin(p.coords.latitude, p.coords.longitude); },
+    () => { if (poner) toast('No se pudo obtener la ubicación. Revisa el permiso del navegador.'); },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+async function mapaBuscarLugar(callado) {
+  const m = mapaEd, q = $('#mapaBuscar').value.trim();
+  if (!q) return false;
+  try {
+    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=es&countrycodes=mx&q=' + encodeURIComponent(q));
+    const j = await r.json();
+    if (mapaEd !== m) return false;
+    if (!j.length) { if (!callado) toast('No encontré ese lugar. Mueve el mapa y toca para poner el pin.'); return false; }
+    m.mapa.setView([Number(j[0].lat), Number(j[0].lon)], 17);
+    if (!callado) toast('Lugar encontrado. Toca el mapa para poner el pin.');
+    return true;
+  } catch (e) { if (!callado) toast('No se pudo buscar. Revisa tu conexión.'); return false; }
+}
+async function abrirMapa(op) {
+  cerrarMapa();
+  const ov = document.createElement('div');
+  ov.id = 'mapaSel'; ov.className = 'mapa-sel';
+  ov.innerHTML = `<div class="mapa-top"><button type="button" class="redondo" data-m="cerrar" aria-label="Cerrar"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div class="mapa-tit">${esc(op.titulo || 'Ubicación')}</div></div>
+    <div class="mapa-busca"><input class="buscador" id="mapaBuscar" type="search" placeholder="Buscar calle, colonia o lugar" value="${esc(op.direccion || '')}" autocomplete="off"><button type="button" class="mini" data-m="buscar">Buscar</button></div>
+    <div id="mapaLienzo"></div>
+    <div class="mapa-pie"><div class="segmento mapa-capas"><button type="button" data-m="capa|calles">Calles</button><button type="button" data-m="capa|satelite">Satélite</button></div>
+      <div class="ayuda" id="mapaTxt" style="margin:8px 4px 0"></div><div class="acciones" id="mapaAcc"></div></div>`;
+  document.body.appendChild(ov);
+  mapaEd = { op, modo: op.modo, pin: null, marker: null, mapa: null, capas: {}, ov, sinRed: false };
+  ov.addEventListener('click', mapaClic);
+  $('#mapaBuscar').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); mapaBuscarLugar(false); } });
+  try { await cargarLeaflet(); } catch (e) { cerrarMapa(); return toast('No se pudo cargar el mapa. Revisa que la carpeta mapa esté subida a GitHub.', 6000); }
+  const m = mapaEd;
+  if (!m || m.ov !== ov) return;
+  const conPin = coordValida(op.lat, op.lng);
+  m.mapa = L.map('mapaLienzo', { zoomControl: true, zoomAnimation: false, markerZoomAnimation: false }).setView(conPin ? [op.lat, op.lng] : [19.3, -96.4], conPin ? 17 : 9);
+  m.capas.calles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+  m.capas.satelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 18, attribution: 'Imágenes © Esri' });
+  Object.values(m.capas).forEach(c => c.on('tileerror', () => { if (!m.sinRed) { m.sinRed = true; toast('El mapa necesita internet para mostrarse. Puedes usar Mi ubicación o pegar coordenadas.', 5000); } }));
+  let capa = 'calles';
+  try { capa = localStorage.getItem(LS_MAPA) === 'satelite' ? 'satelite' : 'calles'; } catch (e) {}
+  mapaCapa(capa);
+  m.mapa.on('click', (e) => { if (m.modo === 'elegir') mapaPonerPin(e.latlng.lat, e.latlng.lng); });
+  if (conPin) mapaPonerPin(op.lat, op.lng);
+  mapaPie();
+  setTimeout(() => { if (mapaEd === m) m.mapa.invalidateSize(); }, 80);
+  if (!conPin && !(op.direccion && await mapaBuscarLugar(true)) && mapaEd === m) mapaGPS(false);
+}
+function mapaClic(e) {
+  const b = e.target.closest('[data-m]');
+  if (!b || !mapaEd) return;
+  const [op, arg] = b.dataset.m.split('|'), m = mapaEd;
+  if (op === 'cerrar') return cerrarMapa();
+  if (op === 'buscar') return mapaBuscarLugar(false);
+  if (op === 'capa') return mapaCapa(arg);
+  if (op === 'gps') return mapaGPS(true);
+  if (op === 'mover') { m.modo = 'elegir'; return mapaPie(); }
+  if (op === 'usar' && m.pin) { const f = m.op.alUsar, p = m.pin; cerrarMapa(); f(p.lat, p.lng); }
+}
+
 /* ---------- Operaciones ---------- */
 function cambioContacto(c) { marcarCambio('contactos', c); }
 function predVolver(v, cid) {
@@ -3117,11 +3245,19 @@ function predOperacion(spec, el) {
     case 'nuevoC': return abrirContactoForm(null);
     case 'editarC': return abrirContactoForm(a);
     case 'verMapa': {
-      const cont = $('#prMapa'), cc = contactoPorId(prVer);
-      if (!cont || !cc) return;
-      if (cont.innerHTML) { cont.innerHTML = ''; return; }
-      cont.innerHTML = `<div class="pred-mapa"><iframe src="${esc(enlaceIncrustado(cc))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa"></iframe></div><p class="ayuda">Si el mapa no aparece, usa Abrir en Google Maps.</p>`;
-      return;
+      const cc = contactoPorId(prVer);
+      if (!cc) return;
+      return abrirMapa({
+        titulo: cc.nombre, lat: cc.lat, lng: cc.lng, direccion: cc.direccion, enlace: enlaceMapa(cc), modo: tieneCoord(cc) ? 'ver' : 'elegir',
+        alUsar: (la, ln) => { cc.lat = la; cc.lng = ln; cc.mapaUrl = ''; cambioContacto(cc); render(); toast('Ubicación guardada'); abrirContacto(cc.id); }
+      });
+    }
+    case 'elegirMapa': {
+      const f = $('#formPrContacto'), lat = parseFloat(f.lat.value), lng = parseFloat(f.lng.value), ok = coordValida(lat, lng);
+      return abrirMapa({
+        titulo: f.nombre.value.trim() || 'Ubicación', lat: ok ? lat : null, lng: ok ? lng : null, direccion: f.direccion.value.trim(), modo: 'elegir',
+        alUsar: (la, ln) => { prUbicacionEnForm({ lat: la, lng: ln }); toast('Ubicación elegida. Falta guardar.'); }
+      });
     }
     case 'gps': {
       if (!navigator.geolocation) return toast('Este dispositivo no permite obtener la ubicación');
@@ -3195,6 +3331,7 @@ function predGuardar(form) {
     if (prEd.nuevo) {
       c.tipo = f.get('tipo') === 'curso' ? 'curso' : 'revisita';
       if (c.tipo === 'curso') c.cursoDesde = hoyISO();
+      c.visitas.push({ id: nuevoId('v'), fecha: txt('primeraFecha') || hoyISO(), hora: txt('primeraHora'), nota: txt('primeraNota'), curso: c.tipo === 'curso', primera: true });
       DB.contactos.push(c);
     }
     cambioContacto(c); render(); toast('Guardado');
@@ -3468,8 +3605,8 @@ async function activarBiometria() {
   try {
     const cred = await navigator.credentials.create({ publicKey: {
       challenge: retoAleatorio(),
-      rp: { name: 'JWCore' },
-      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'ancianos', displayName: 'JWCore' },
+      rp: { name: 'JW Mainframe' },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'ancianos', displayName: 'JW Mainframe' },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
       timeout: 60000
@@ -3508,7 +3645,7 @@ function bloquear() {
 
 function vistaBloqueo() {
   vista.innerHTML = `<div class="bloqueo">
-    ${cabecera('JWCore', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', 'APP BLOQUEADA')}
+    ${cabecera('JW Mainframe', 'CONGREGACIÓN CHICHICAXTLE', 'var(--navy)', 'APP BLOQUEADA')}
     <button class="boton" id="btnDesbloquear">Desbloquear con huella o rostro</button>
     <p>Si tu celular lo permite, también puedes usar su PIN o patrón.</p>
   </div>`;
@@ -3540,7 +3677,7 @@ function render() {
   else if (ruta === 'ajustes') vistaAjustes();
   else vistaInicio();
 }
-window.addEventListener('hashchange', () => { cerrarHoja(); render(); window.scrollTo(0, 0); });
+window.addEventListener('hashchange', () => { cerrarMapa(); cerrarHoja(); render(); window.scrollTo(0, 0); });
 
 /* Colores de JW Library: sistema personal de subrayado de Abrahán */
 const COLORES_JWL = [

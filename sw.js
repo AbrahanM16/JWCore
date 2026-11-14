@@ -1,4 +1,4 @@
-const VERSION = 'jwcore-v20';
+const VERSION = 'jwcore-v22';
 const BASE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -16,6 +16,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || req.url.includes('script.google') || req.url.includes('googleusercontent')) return;
+  if (/tile\.openstreetmap\.org|arcgisonline\.com|nominatim\.openstreetmap\.org/.test(req.url)) return;
 
   // La app: primero internet (para recibir correcciones al momento), y si no hay, la copia guardada.
   if (req.mode === 'navigate' || new URL(req.url).origin === location.origin) {
