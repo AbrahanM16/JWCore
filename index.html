@@ -291,6 +291,7 @@ aplicarTema();
   .aj-barra i { display: block; height: 100%; background: var(--verde); border-radius: 999px; }
   .clave-oculta { -webkit-text-security: disc; text-security: disc; }
   .acciones-sup { display: flex; flex: none; }
+  #btnColores img { display: block; border-radius: 5px; }
 
   details.mas-adelante { margin-top: 10px; }
   details.mas-adelante > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 10px 6px; font-size: 14px; font-weight: 600; color: var(--navy-t); }
@@ -624,6 +625,7 @@ aplicarTema();
   <div class="acciones-sup">
     <a class="redondo" id="btnPred" href="#predicacion" aria-label="Predicación"><svg stroke-width="1.7" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></a>
     <a class="redondo" id="btnSemana" href="#semana" aria-label="Mi semana"><svg stroke-width="1.7" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></a>
+    <button type="button" class="redondo" id="btnColores" aria-label="Colores de JW Library"><img src="data:image/jpeg;base64,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" width="24" height="24" alt=""></button>
     <button type="button" class="redondo" id="btnMas" aria-label="Más opciones"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="fill:currentColor;stroke:none"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
   </div>
 </div></header>
@@ -687,7 +689,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '14 nov 2026, 11:50';
+const VERSION_APP = '14 nov 2026, 12:00';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -3812,17 +3814,16 @@ function abrirColores() {
 function abrirMenu() {
   const oscuro = document.documentElement.dataset.tema === 'oscuro', n = totalPapelera();
   abrirHoja(`<h3>Más opciones</h3>
-    <button type="button" class="menu-fila" data-menu="colores"><span>Colores de JW Library</span>${CHEV}</button>
     <button type="button" class="menu-fila" data-menu="tema"><span>${oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}</span></button>
     <a class="menu-fila" href="#formularios"><span>Fuentes: formularios y libros</span>${CHEV}</a>
     <a class="menu-fila" href="#papelera"><span>Papelera</span>${n ? `<span class="contador alerta">${n}</span>` : ''}${CHEV}</a>
     <a class="menu-fila" href="#ajustes"><span>Ajustes</span>${CHEV}</a>`);
 }
 $('#btnMas').addEventListener('click', abrirMenu);
+$('#btnColores').addEventListener('click', abrirColores);
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-menu]');
   if (!b) return;
-  if (b.dataset.menu === 'colores') return abrirColores();
   guardarTema(document.documentElement.dataset.tema === 'oscuro' ? 'claro' : 'oscuro'); cerrarHoja(); render();
 });
 
