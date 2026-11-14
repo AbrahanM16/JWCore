@@ -698,7 +698,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '13 nov 2026, 19:15';
+const VERSION_APP = '13 nov 2026, 20:34';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -3035,7 +3035,7 @@ function abrirContactoForm(id) {
       <div class="campo"><span>Ubicación exacta</span>
         <input type="hidden" name="lat" value="${tieneCoord(c) ? c.lat : ''}"><input type="hidden" name="lng" value="${tieneCoord(c) ? c.lng : ''}"><input type="hidden" name="mapaUrl" value="${esc(c.mapaUrl || '')}">
         <div class="ayuda" id="prUbiEstado" style="margin:0 0 8px 6px">${esc(textoUbicacion(c))}</div>
-        <div class="acciones" style="margin-top:0"><button type="button" class="boton" data-pred="elegirMapa">Elegir en el mapa</button><button type="button" class="boton sec" data-pred="gps">Usar mi ubicación actual</button><button type="button" class="boton sec" data-pred="ubiBuscar">Buscar en Google Maps</button>${tieneCoord(c) || c.mapaUrl ? '<button type="button" class="boton peligro" data-pred="ubiQuitar">Quitar</button>' : ''}</div>
+        <div class="acciones" style="margin-top:0"><button type="button" class="boton" data-pred="elegirMapa">Elegir en el mapa</button><button type="button" class="boton sec" data-pred="gps">Usar mi ubicación actual</button><button type="button" class="boton sec" data-pred="ubiBuscar">Abrir en Google Maps</button>${tieneCoord(c) || c.mapaUrl ? '<button type="button" class="boton peligro" data-pred="ubiQuitar">Quitar</button>' : ''}</div>
         <input id="prUbiTexto" type="text" inputmode="url" placeholder="O pega aquí un enlace de Google Maps o las coordenadas" autocomplete="off" style="margin-top:8px">
         <button type="button" class="mini" style="margin-top:8px" data-pred="ubiPegar">Guardar lo pegado</button>
         <div class="ayuda">En Google Maps deja presionado el punto, toca las coordenadas y cópialas, o usa Compartir y copia el enlace. Un enlace corto (maps.app.goo.gl) se guarda y se abre en Google Maps; para verlo en el mapa de la app, elige el punto con Elegir en el mapa.</div></div>
@@ -3270,8 +3270,11 @@ function predOperacion(spec, el) {
     }
     case 'ubiBuscar': {
       const f = $('#formPrContacto');
-      const q = f.direccion.value.trim() || f.nombre.value.trim();
-      window.open(q ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q) : 'https://www.google.com/maps', '_blank', 'noopener');
+      const lat = parseFloat(f.lat.value), lng = parseFloat(f.lng.value), q = f.direccion.value.trim() || f.nombre.value.trim();
+      const url = coordValida(lat, lng) ? 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng
+        : f.mapaUrl.value ? f.mapaUrl.value
+        : q ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q) : 'https://www.google.com/maps';
+      window.open(url, '_blank', 'noopener');
       return;
     }
     case 'ubiPegar': {
