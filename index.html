@@ -709,7 +709,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '14 nov 2026, 21:40';
+const VERSION_APP = '14 nov 2026, 23:30';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -2969,9 +2969,9 @@ function camposSerie(r) {
   return `<label class="campo"><span>Se repite</span><select name="repite">${PR_REPITE.map(([v, t]) => `<option value="${v}" ${repiteDe(r) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <div class="campo solo-otro"><span>Cada cuánto</span><div class="pred-hm"><input type="number" name="cadaN" min="1" max="365" inputmode="numeric" value="${cada.n}">
         <select name="cadaU">${Object.keys(PR_UNIDADES).map(u => `<option value="${u}" ${cada.u === u ? 'selected' : ''}>${PR_UNIDADES[u][1]}</option>`).join('')}</select></div></div>
-      <div class="campo"><span>Avisarme</span><div class="pred-avisos" id="prAvisos">${chipsAvisos()}</div>
+      <div class="campo"><span>Avisarme antes de la visita</span><div class="pred-avisos" id="prAvisos">${chipsAvisos()}</div>
         <div class="pred-otro"><input type="number" id="prAvisoN" min="1" inputmode="numeric" placeholder="Otro" aria-label="Cuánto antes"><select id="prAvisoU" aria-label="Unidad"><option value="1">minutos antes</option><option value="60">horas antes</option><option value="1440">días antes</option></select><button type="button" class="mini" data-pred="avisoOtro">Agregar</button></div>
-        <div class="ayuda">Puedes elegir varios. Los avisos necesitan la hora de la visita y llegan por correo y Telegram. Si la visita se repite, se repiten con ella.</div></div>`;
+        <div class="ayuda">Los avisos se cuentan desde la hora de la visita, así que necesitan que la pongas. Puedes elegir varios. Llegan por Telegram y, si lo tienes activo, por correo. Si la visita se repite, los avisos se repiten con ella.</div></div>`;
 }
 function serieDeForm(f) {
   const v = f.get('repite') || '';
@@ -3175,10 +3175,10 @@ function abrirContacto(id) {
     <div class="acciones pred-acc">${enl ? `<a class="boton" href="${esc(enl)}" target="_blank" rel="noopener">Abrir en Google Maps</a>` : ''}${ruta ? `<a class="boton sec" href="${esc(ruta)}" target="_blank" rel="noopener">Cómo llegar</a>` : ''}<button type="button" class="boton sec" data-pred="verMapa">${tieneCoord(c) ? 'Ver mapa aquí' : 'Poner pin en el mapa'}</button></div>
     ${tieneCoord(c) || c.mapaUrl ? `<p class="ayuda" style="margin-top:4px">${esc(textoUbicacion(c))}</p>` : ''}
     ${c.notas ? `<div class="pred-notas">${esc(c.notas)}</div>` : ''}
-    <h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:17px">Recordatorios de visita<span class="cuenta">${recs.length}</span></h2>
+    <h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:17px">Visitas planeadas<span class="cuenta">${recs.length}</span></h2>
     ${recs.length ? recs.map(r => `<div class="pred-item"><div class="pred-ih"><b>${esc(fechaLarga(r.fecha))}${r.hora ? ', ' + esc(r.hora) : ''}</b><span class="chip ${r.fecha < hoyISO() ? 'rojo' : r.fecha === hoyISO() ? 'ambar' : ''}">${esc(haceDias(r.fecha))}</span></div>${r.nota ? `<div class="d">${esc(r.nota)}</div>` : ''}${textoSerie(r) ? `<div class="d">${esc(textoSerie(r))}</div>` : ''}
       <div class="acciones pred-acc"><button type="button" class="mini on-filtro" data-pred="completar|${esc(c.id)}|${esc(r.id)}|c">Completar</button><button type="button" class="mini" data-pred="recEditar|${esc(c.id)}|${esc(r.id)}|c">Editar</button></div></div>`).join('') : '<div class="vacio" style="padding:10px 14px">No hay visitas planeadas.</div>'}
-    <div class="acciones"><button type="button" class="boton sec" data-pred="recNuevo|${esc(c.id)}|c">+ Recordatorio</button><button type="button" class="boton sec" data-pred="visitaNueva|${esc(c.id)}">Registrar visita ya hecha</button></div>
+    <div class="acciones"><button type="button" class="boton sec" data-pred="recNuevo|${esc(c.id)}|c">+ Visita planeada</button><button type="button" class="boton sec" data-pred="visitaNueva|${esc(c.id)}">Registrar visita ya hecha</button></div>
     <h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:17px">Historial de visitas<span class="cuenta">${vis.length}</span></h2>
     ${vis.length ? vis.map(v => `<button type="button" class="pred-item pred-btn" data-pred="visitaEditar|${esc(c.id)}|${esc(v.id)}"><div class="pred-ih"><b>${esc(fechaLarga(v.fecha))}${v.hora ? ', ' + esc(v.hora) : ''}</b><span class="meta" style="margin:0">${v.primera ? '<span class="chip">Primera conversación</span>' : ''}${v.curso ? '<span class="chip verde">Curso</span>' : ''}</span></div>${v.nota ? `<div class="d">${esc(v.nota)}</div>` : ''}</button>`).join('') : '<div class="vacio" style="padding:10px 14px">Todavía no hay visitas registradas.</div>'}
     <div class="acciones" style="margin-top:16px"><button type="button" class="boton sec" data-pred="editarC|${esc(c.id)}">Editar datos</button>
@@ -3194,7 +3194,7 @@ function abrirContactoForm(id) {
   if (!c) return cerrarHoja();
   prEd = { cid: id, nuevo: !id, c };
   abrirHoja(`<h3>${id ? 'Editar datos' : 'Agregar revisita o curso'}</h3>
-    <form id="formPrContacto" data-tipo="revisita">
+    <form id="formPrContacto" data-tipo="revisita" data-repite="">
       <label class="campo"><span>Nombre</span><input name="nombre" required maxlength="120" value="${esc(c.nombre)}" autocomplete="off"></label>
       ${id ? '' : `<label class="campo"><span>Es</span><select name="tipo"><option value="revisita">Revisita</option><option value="curso">Curso desde el principio</option></select></label>`}
       <label class="campo"><span>Número de territorio</span><input name="territorio" maxlength="20" value="${esc(c.territorio)}" placeholder="Ej. 12" autocomplete="off"></label>
@@ -3205,6 +3205,9 @@ function abrirContactoForm(id) {
       <div class="campo solo-revisita"><span>Primera conversación</span><div class="pred-hm"><input type="date" name="primeraFecha" value="${hoyISO()}"><input type="time" name="primeraHora" value="${horaAhora()}"></div>
         <input name="primeraNota" maxlength="200" placeholder="Qué platicaron (opcional)" style="margin-top:8px" autocomplete="off">
         <div class="ayuda">Se guarda como la primera visita del historial, con el día y la hora de ahora. Puedes cambiarlos si fue antes.</div></div>`}
+      ${id ? '' : `<div class="campo"><span>Próxima visita (opcional)</span><div class="pred-hm"><input type="date" name="visitaFecha"><input type="time" name="visitaHora"></div>
+        <div class="ayuda">Si ya quedaron de verse, pon el día y la hora. Abajo eliges si se repite, como un curso semanal, y cuándo avisarte.</div></div>
+      ${camposSerie(null)}`}
       <div class="campo"><span>Ubicación exacta</span>
         <input type="hidden" name="lat" value="${tieneCoord(c) ? c.lat : ''}"><input type="hidden" name="lng" value="${tieneCoord(c) ? c.lng : ''}"><input type="hidden" name="mapaUrl" value="${esc(c.mapaUrl || '')}">
         <div class="ayuda" id="prUbiEstado" style="margin:0 0 8px 6px">${esc(textoUbicacion(c))}</div>
@@ -3227,10 +3230,10 @@ function abrirRecordatorio(cid, rid, volver) {
   if (!c) return cerrarHoja();
   const r = rid ? c.recordatorios.find(x => x.id === rid) : null;
   prEd = { cid, rid: r ? r.id : null, volver };
-  abrirHoja(`<h3>${r ? 'Editar recordatorio' : 'Nuevo recordatorio'}</h3><p class="ayuda" style="margin:-6px 0 10px">${esc(c.nombre)}</p>
+  abrirHoja(`<h3>${r ? 'Editar visita planeada' : 'Nueva visita planeada'}</h3><p class="ayuda" style="margin:-6px 0 10px">${esc(c.nombre)}</p>
     <form id="formPrRec" data-repite="${repiteDe(r)}">
       <label class="campo"><span>Día de la visita</span><input type="date" name="fecha" required value="${esc(r ? r.fecha : hoyISO())}"></label>
-      <label class="campo"><span>Hora (opcional)</span><input type="time" name="hora" value="${esc(r ? r.hora || '' : '')}"></label>
+      <label class="campo"><span>Hora de la visita (opcional)</span><input type="time" name="hora" value="${esc(r ? r.hora || '' : '')}"></label>
       <label class="campo"><span>Nota (opcional)</span><input name="nota" maxlength="200" value="${esc(r ? r.nota || '' : '')}" placeholder="Ej. llevar la revista"></label>
       ${camposSerie(r)}
       <div class="acciones"><button class="boton" type="submit">Guardar</button>${r && r.cada ? '<button class="boton sec" type="button" data-pred="recSaltar">Pasar a la siguiente fecha</button>' : ''}${r ? '<button class="boton peligro" type="button" data-pred="recBorrar">Eliminar</button>' : ''}<button class="boton sec" type="button" data-pred="volver|${esc(cid)}|${esc(volver)}">Cancelar</button></div>
@@ -3462,9 +3465,9 @@ function predOperacion(spec, el) {
     case 'recNuevo': return abrirRecordatorio(a, null, b);
     case 'recEditar': return abrirRecordatorio(a, b, c3);
     case 'recBorrar': {
-      const c = contactoPorId(prEd.cid); if (!c || !confirm('¿Eliminar este recordatorio?')) return;
+      const c = contactoPorId(prEd.cid); if (!c || !confirm('¿Eliminar esta visita planeada?')) return;
       c.recordatorios = c.recordatorios.filter(x => x.id !== prEd.rid); cambioContacto(c);
-      render(); toast('Recordatorio eliminado'); return predVolver(prEd.volver, c.id);
+      render(); toast('Visita planeada eliminada'); return predVolver(prEd.volver, c.id);
     }
     case 'recSaltar': {
       const c = contactoPorId(prEd.cid), r = c && c.recordatorios.find(x => x.id === prEd.rid), sig = r && r.cada && siguienteDe(r);
@@ -3530,6 +3533,13 @@ function predGuardar(form) {
       else c.visitas.push({ id: nuevoId('v'), fecha: txt('primeraFecha') || hoyISO(), hora: txt('primeraHora'), nota: txt('primeraNota'), curso: false, primera: true });
       DB.contactos.push(c);
     }
+    if (prEd.nuevo && txt('visitaFecha')) {
+      const v = { id: nuevoId('r'), fecha: txt('visitaFecha'), hora: txt('visitaHora'), nota: '' };
+      if (v.hora) v.avisos = prEd.avisos.slice().sort((x, y) => x - y);
+      const cada = serieDeForm(f);
+      if (cada) v.cada = cada;
+      c.recordatorios.push(v);
+    }
     cambioContacto(c); render(); toast('Guardado');
     return abrirContacto(c.id);
   }
@@ -3540,10 +3550,10 @@ function predGuardar(form) {
     let r = prEd.rid && c.recordatorios.find(x => x.id === prEd.rid);
     if (!r) { r = { id: nuevoId('r') }; c.recordatorios.push(r); }
     r.fecha = txt('fecha'); r.hora = txt('hora'); r.nota = txt('nota');
-    r.avisos = prEd.avisos.slice().sort((x, y) => x - y);
+    if (r.hora) r.avisos = prEd.avisos.slice().sort((x, y) => x - y); else delete r.avisos;
     const cada = serieDeForm(f);
     if (cada) r.cada = cada; else delete r.cada;
-    cambioContacto(c); render(); toast('Recordatorio guardado');
+    cambioContacto(c); render(); toast('Visita planeada guardada');
     return predVolver(prEd.volver, c.id);
   }
   if (id === 'formPrCompletar') {
