@@ -1,4 +1,4 @@
-const VERSION = 'jwcore-v31';
+const VERSION = 'jwcore-v34';
 const BASE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -34,9 +34,4 @@ self.addEventListener('fetch', (e) => {
       const copia = r.clone(); caches.open(VERSION).then((c) => c.put(req, copia)); return r;
     }))
   );
-});
-
-self.addEventListener('notificationclick', (e) => {
-  e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: 'window' }).then((cs) => cs.length ? cs[0].focus() : self.clients.openWindow('./')));
 });
