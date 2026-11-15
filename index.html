@@ -713,7 +713,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '15 nov 2026, 00:20';
+const VERSION_APP = '15 nov 2026, 11:55';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -3698,6 +3698,7 @@ function normalizar() {
     DB.cargos.push(g); g.updatedAt = Date.now();
     if (!SUCIOS.cargos.includes(g.id)) SUCIOS.cargos.push(g.id);
   }
+  DB.contactos.forEach(c => { if (c.purgado && !SUCIOS.contactos.includes(c.id)) SUCIOS.contactos.push(c.id); });
   migrarHermanos();
 }
 
@@ -3770,6 +3771,7 @@ async function sincronizar(manual) {
         if (reg && reg.updatedAt === ts) SUCIOS[tipo] = SUCIOS[tipo].filter(x => x !== id);
       });
     });
+    if (servidorPred) DB.contactos = DB.contactos.filter(c => !(c.purgado && enviados.contactos.some(([id, ts]) => id === c.id && ts === c.updatedAt)));
     if (fechasEnviadas && DB.fechas.updatedAt === fechasEnviadas) SUCIOS.fechas = false;
     if (servidorSemana && semanaEnviada && DB.semana.updatedAt === semanaEnviada) SUCIOS.semana = false;
     const escribiendo = document.activeElement && document.activeElement.matches('textarea, input, [contenteditable]');
