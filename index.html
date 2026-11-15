@@ -431,14 +431,8 @@ aplicarTema();
   .casilla input { width: 18px; height: 18px; flex: none; }
   .auto-lista { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .hist-bloque, .registro { margin: 4px 0 14px; }
-  .anc-meta { display: flex; align-items: center; gap: 10px; padding: 8px 0; box-shadow: inset 0 -.5px 0 var(--linea); }
-  .anc-chk { flex: 0 0 24px; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid var(--gris); background: none; display: grid; place-items: center; }
-  .anc-chk.on { background: var(--verde); border-color: var(--verde); }
-  .anc-chk svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 3; }
-  .anc-txt { flex: 1; min-width: 0; font-size: 14px; line-height: 1.38; }
-  .anc-txt.hecha { color: var(--gris); text-decoration: line-through; }
-  .anc-mas { display: flex; gap: 8px; margin-top: 8px; }
-  .anc-mas input { flex: 1; min-width: 0; }
+  .enc-fila { display: flex; align-items: center; gap: 8px; padding: 7px 0; box-shadow: inset 0 -.5px 0 var(--linea); font-size: 14px; }
+  .enc-fila > span:first-child { flex: 1; min-width: 0; font-weight: 600; }
   .anc-dia { font-size: 12.5px; font-weight: 700; color: var(--gris); margin: 14px 0 2px; }
   .anc-resumen { font-size: 13px; line-height: 1.45; margin: 4px 0 6px; display: grid; gap: 3px; }
   .anc-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
@@ -729,7 +723,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '15 nov 2026, 15:40';
+const VERSION_APP = '15 nov 2026, 16:40';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -747,6 +741,7 @@ if (!DISP.id) {
   localStorage.setItem(LS_DISP, JSON.stringify(DISP));
 }
 let bloqueada = !!BIO.credId;
+let huellaPendiente = true;
 let ocultaDesde = null;
 const MINUTOS_PARA_BLOQUEAR = 1;
 
@@ -1081,9 +1076,8 @@ function tarjetaTarea(t, mostrarCargo) {
     <span class="anillo">${s.clase === 'hecha' ? PALOMITA : ''}</span>
     <span class="tarea-cuerpo"><span class="t">${esc(t.titulo)}</span>
     <span class="meta">
-      ${mostrarCargo ? `<span class="chip cargo" style="--c:${c.color}">${esc(c.nombre)}</span>` : ''}
+      ${t.origen ? `<span class="chip cargo" style="--c:#4A4A4A">${esc(textoEncargados(t) || 'Acuerdo de ancianos')}</span>` : mostrarCargo ? `<span class="chip cargo" style="--c:${c.color}">${esc(c.nombre)}</span>` : ''}
       ${chipFecha}${proceso}${rec}${nota}
-      ${t.origen ? '<span class="chip">Arreglo de ancianos</span>' : ''}
       ${t.ref ? `<span class="chip ref">${esc(t.ref)}</span>` : ''}
     </span></span>
   </button>`;
@@ -1983,6 +1977,7 @@ function abrirTarea(id, nuevaCargo) {
 }
 function pintarTarea(t) {
   const s = situacion(t);
+  if (t.origen && !tareaEditando.enc) tareaEditando.enc = (t.encargados || []).filter(id => pubPorId(id));
   const periodica = ['semanal', 'mensual', 'anual', 'intervalo'].includes(t.tipo);
   abrirHoja(`<h3>${tareaEditando.nueva ? 'Nueva tarea' : 'Tarea'}</h3>
   ${t.origen ? `<p class="ayuda" style="margin:-4px 0 10px">${esc(textoOrigen(t))}</p>` : ''}
@@ -1990,10 +1985,11 @@ function pintarTarea(t) {
     <label class="campo"><span>Tarea</span><input name="titulo" required value="${esc(t.titulo)}"></label>
     <label class="campo"><span>Detalle</span><textarea name="detalle">${esc(t.detalle || '')}</textarea></label>
     ${bloqueFuente(t)}
-    <div class="dos">
+    ${t.origen ? `<div class="campo"><span>Encargado y auxiliares</span><div id="encBloque">${bloqueEncargados()}</div></div>
+    <label class="campo"><span>Referencia</span><input name="ref" value="${esc(t.ref || '')}"></label>` : `<div class="dos">
       <label class="campo"><span>Cargo</span><select name="cargo">${cargosOrden().map(c => `<option value="${c.id}" ${c.id === t.cargo ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></label>
       <label class="campo"><span>Referencia</span><input name="ref" value="${esc(t.ref || '')}"></label>
-    </div>
+    </div>`}
     <label class="campo"><span>Cuándo</span><select name="tipo" id="selTipo">${Object.entries(TIPOS).map(([v, l]) => `<option value="${v}" ${v === t.tipo ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
     <div id="camposTipo">${camposTipo(t)}</div>
     ${periodica && t.proxima && t.tipo !== 'intervalo' ? `<p class="ayuda" style="margin:-4px 0 12px">Próxima: ${fechaLarga(t.proxima)}</p>` : ''}
@@ -2035,7 +2031,8 @@ function leerFormTarea(form) {
   t.detalle = f.get('detalle').trim();
   if (f.has('cita')) t.cita = f.get('cita').trim();
   if (f.has('forms')) t.forms = f.get('forms').split(/[,;]/).map(x => x.trim()).filter(Boolean);
-  t.cargo = f.get('cargo');
+  if (f.has('cargo')) t.cargo = f.get('cargo');
+  if (t.origen && tareaEditando.enc) { if (tareaEditando.enc.length) t.encargados = tareaEditando.enc.slice(); else delete t.encargados; }
   t.ref = f.get('ref').trim();
   t.tipo = f.get('tipo');
   t.notas = f.get('notas').trim();
@@ -2203,6 +2200,7 @@ function omitirVarias(lista, donde) {
 
 hoja.addEventListener('change', (e) => {
   if (e.target.dataset && e.target.dataset.unico && e.target.checked) hoja.querySelectorAll(`[data-unico="${e.target.dataset.unico}"]`).forEach(x => { if (x !== e.target) x.checked = false; });
+  if (e.target.id === 'encAgregar' && tareaEditando && tareaEditando.enc && e.target.value) { tareaEditando.enc.push(e.target.value); $('#encBloque').innerHTML = bloqueEncargados(); return; }
   if (e.target.id === 'conAgregar' && recEd && e.target.value) { recEd.con.push(e.target.value); $('#conRec').innerHTML = bloqueConRec(); return; }
   if (e.target.name === 'evento' && tareaEditando && $('#formTarea')) {
     const fd = new FormData($('#formTarea'));
@@ -2262,6 +2260,12 @@ hoja.addEventListener('click', (e) => {
   if (e.target.closest('[data-quitar-fila]')) return e.target.closest('.fila-nota').remove();
   const at = e.target.closest('[data-atiende]');
   if (at && recEd) { recEd.atiende = at.dataset.atiende; at.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === at)); return; }
+  const en = e.target.closest('[data-enc]');
+  if (en && tareaEditando && tareaEditando.enc) {
+    const [op, pid] = en.dataset.enc.split('|'), l = tareaEditando.enc;
+    tareaEditando.enc = op === 'quitar' ? l.filter(x => x !== pid) : [pid].concat(l.filter(x => x !== pid));
+    $('#encBloque').innerHTML = bloqueEncargados(); return;
+  }
   const cq = e.target.closest('[data-con-quitar]');
   if (cq && recEd) { recEd.con = recEd.con.filter(id => id !== cq.dataset.conQuitar); $('#conRec').innerHTML = bloqueConRec(); return; }
   const pr = e.target.closest('[data-prio]');
@@ -2396,8 +2400,22 @@ const copiaAnc = (x) => JSON.parse(JSON.stringify(x));
 const textoOrigen = (t) => {
   if (!t.origen) return '';
   const r = DB.ancianos.find(a => a.id === t.origen.id && !a.borrado);
-  return 'Arreglo de ancianos' + (r ? ' de la reunión del ' + fechaLarga(r.fecha) : '');
+  return 'Acuerdo de ancianos' + (r ? ' de la reunión del ' + fechaLarga(r.fecha) : '');
 };
+
+const encargadosDe = (t) => (t.encargados || []).map(pubPorId).filter(Boolean).map(nombreCorto);
+function textoEncargados(t) {
+  const n = encargadosDe(t);
+  return n.length ? 'Encargado: ' + n[0] + (n.length > 1 ? '. Auxiliares: ' + n.slice(1).join(', ') : '') : '';
+}
+/* El primero de la lista es el encargado y los demás, auxiliares */
+function bloqueEncargados() {
+  const enc = tareaEditando.enc, l = enc.map(pubPorId).filter(Boolean);
+  const resto = pubsActivos().filter(x => !enc.includes(x.id)).sort(porNombre);
+  const grupos = [1, 2, 3, 4].map(n => [n, resto.filter(x => x.grupo === n)]).filter(([, g]) => g.length);
+  return `${l.length ? l.map((x, i) => `<div class="enc-fila"><span>${esc(nombreCorto(x))}</span><span class="chip ${i === 0 ? 'verde' : ''}">${i === 0 ? 'Encargado' : 'Auxiliar'}</span>${i ? `<button type="button" class="mini" data-enc="primero|${esc(x.id)}">Hacer encargado</button>` : ''}<button type="button" class="mini" data-enc="quitar|${esc(x.id)}">Quitar</button></div>`).join('') : '<p class="ayuda" style="margin:0 0 6px">Elige primero al encargado. Los demás serán auxiliares.</p>'}
+    <select id="encAgregar" style="margin-top:8px"><option value="">${l.length ? 'Agregar auxiliar...' : 'Elegir encargado...'}</option>${grupos.map(([n, g]) => `<optgroup label="Grupo ${n}">${g.map(x => `<option value="${esc(x.id)}">${esc(x.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+}
 
 function vistaAncianos(tab) {
   if (tab === 'reuniones' || tab === 'viajante') ancTab = tab;
@@ -2409,12 +2427,11 @@ function vistaAncianos(tab) {
 
 /* ---------- Reuniones ---------- */
 function filaReunion(a) {
-  const hoy = hoyISO(), metas = a.metas || [], ar = tareasDeReunion(a.id);
-  const mh = metas.filter(m => m.hecha).length, ah = ar.filter(t => situacion(t).hecha).length;
+  const hoy = hoyISO(), ar = tareasDeReunion(a.id), ah = ar.filter(t => situacion(t).hecha).length;
   return `<button type="button" class="pred-fila" data-anc="verR|${esc(a.id)}">
     <span class="pred-av" style="--c:var(--navy)">${esc(a.fecha.slice(8))}</span>
     <span class="pred-cuerpo"><span class="t">${esc(fechaLarga(a.fecha))}${a.hora ? ', ' + esc(a.hora) : ''}</span>
-      <span class="meta">${a.fecha === hoy ? '<span class="chip ambar">Hoy</span>' : a.fecha > hoy ? '<span class="chip">Próxima</span>' : ''}${a.viajanteId ? '<span class="chip">Con el viajante</span>' : ''}${metas.length ? `<span class="chip">Metas ${mh}/${metas.length}</span>` : ''}${ar.length ? `<span class="chip">Arreglos ${ah}/${ar.length}</span>` : ''}</span>
+      <span class="meta">${a.fecha === hoy ? '<span class="chip ambar">Hoy</span>' : a.fecha > hoy ? '<span class="chip">Próxima</span>' : ''}${a.viajanteId ? '<span class="chip">Con el viajante</span>' : ''}${ar.length ? `<span class="chip">Acuerdos y tareas ${ah}/${ar.length}</span>` : ''}</span>
       ${a.notas ? `<span class="d">${esc(a.notas.split('\n')[0])}</span>` : ''}</span>${CHEV}</button>`;
 }
 function vistaReuniones() {
@@ -2428,11 +2445,11 @@ function vistaReuniones() {
 }
 function ancAbrirR(id) {
   const orig = id && DB.ancianos.find(a => a.id === id && !a.borrado);
-  ancEd = orig ? { a: copiaAnc(orig), nueva: false } : { a: { id: nuevoId('a'), clase: 'reunion', fecha: hoyISO(), hora: '', notas: '', metas: [] }, nueva: true };
+  ancEd = orig ? { a: copiaAnc(orig), nueva: false } : { a: { id: nuevoId('a'), clase: 'reunion', fecha: hoyISO(), hora: '', notas: '' }, nueva: true };
   ancPintarR();
 }
 function ancPintarR() {
-  const { a, nueva } = ancEd, ar = nueva ? [] : tareasDeReunion(a.id), metas = a.metas || [];
+  const { a, nueva } = ancEd, ar = nueva ? [] : tareasDeReunion(a.id);
   abrirHoja(`<h3>${nueva ? 'Nueva reunión de ancianos' : 'Reunión de ancianos'}</h3>
   <form id="formAncR">
     <div class="campo"><span>Fecha</span>${selectorFecha('fecha', a.fecha)}</div>
@@ -2441,12 +2458,9 @@ function ancPintarR() {
     <button type="button" class="mini" data-anc="hist|R" style="margin:-4px 0 12px">Ver historial con el viajante</button>
     ${bloqueAvisos(a, 'Avisarme antes de la reunión')}
     <label class="campo"><span>Notas</span><textarea name="notas" placeholder="Temas tratados, acuerdos generales...">${esc(a.notas || '')}</textarea></label>
-    <div class="hist-bloque"><span class="hist-tit">Metas (${metas.filter(m => m.hecha).length}/${metas.length})</span>
-      ${metas.map(m => `<div class="anc-meta"><button type="button" class="anc-chk ${m.hecha ? 'on' : ''}" data-anc="metaH|${esc(m.id)}" aria-label="Marcar meta">${m.hecha ? PALOMITA : ''}</button><span class="anc-txt ${m.hecha ? 'hecha' : ''}">${esc(m.texto)}</span><button type="button" class="mini" data-anc="metaQ|${esc(m.id)}">Quitar</button></div>`).join('')}
-      <div class="anc-mas"><input id="ancMetaTxt" placeholder="Nueva meta" autocomplete="off"><button type="button" class="mini" data-anc="metaMas">Agregar</button></div></div>
-    <div class="hist-bloque"><span class="hist-tit">Arreglos (${ar.filter(t => situacion(t).hecha).length}/${ar.length})</span>
-      ${ar.length ? ar.map(t => `<button type="button" class="renglon" data-anc="arreglo|${esc(t.id)}"><span class="t">${esc(t.titulo)}</span><span class="chip ${situacion(t).hecha ? 'verde' : t.estado === 'proceso' ? 'ambar' : ''}">${situacion(t).hecha ? 'Hecho' : t.estado === 'proceso' ? 'En proceso' : 'Pendiente'}</span></button>`).join('') : '<p class="ayuda" style="margin:2px 0 6px">Todavía no hay arreglos. Cada uno es un pendiente con todos sus detalles.</p>'}
-      <button type="button" class="mini" data-anc="arregloNuevo" style="margin-top:6px">+ Arreglo</button></div>
+    <div class="hist-bloque"><span class="hist-tit">Acuerdos y tareas (${ar.filter(t => situacion(t).hecha).length}/${ar.length})</span>
+      ${ar.length ? ar.map(t => `<button type="button" class="renglon" data-anc="acuerdo|${esc(t.id)}"><span class="t">${esc(t.titulo)}${t.encargados && t.encargados.length ? `<span class="d"> ${esc(textoEncargados(t))}</span>` : ''}</span><span class="chip ${situacion(t).hecha ? 'verde' : t.estado === 'proceso' ? 'ambar' : ''}">${situacion(t).hecha ? 'Hecho' : t.estado === 'proceso' ? 'En proceso' : 'Pendiente'}</span></button>`).join('') : '<p class="ayuda" style="margin:2px 0 6px">Todavía no hay acuerdos ni tareas. Cada uno es un pendiente con todos sus detalles, con su encargado y sus auxiliares.</p>'}
+      <button type="button" class="mini" data-anc="acuerdoNuevo" style="margin-top:6px">+ Acuerdo o tarea</button></div>
     <div class="acciones">
       <button class="boton" type="submit">Guardar</button>
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button>
@@ -2467,7 +2481,7 @@ function ancCommit() {
   Object.keys(reg).forEach(k => delete reg[k]); Object.assign(reg, copiaAnc(a));
   marcarCambio('ancianos', reg); ancEd.nueva = false;
 }
-function ancAbrirArreglo(id) {
+function ancAbrirAcuerdo(id) {
   ancCommit();
   const rid = ancEd.a.id;
   if (id) abrirTarea(id);
@@ -2653,18 +2667,8 @@ function ancOperacion(op, el) {
   if (k === 'verR') return ancAbrirR(x);
   if (k === 'nuevaV') return ancAbrirV(null);
   if (k === 'verV') return ancAbrirV(x);
-  if (k === 'metaMas') {
-    const campo = $('#ancMetaTxt'), t = campo && campo.value.trim(); if (!t) return;
-    ancLeerR(); ancEd.a.metas = ancEd.a.metas || []; ancEd.a.metas.push({ id: nuevoId('m'), texto: t, hecha: false });
-    ancCommit(); ancPintarR(); render(); return;
-  }
-  if (k === 'metaH' || k === 'metaQ') {
-    ancLeerR(); const m = (ancEd.a.metas || []).find(y => y.id === x); if (!m) return;
-    if (k === 'metaH') m.hecha = !m.hecha; else ancEd.a.metas = ancEd.a.metas.filter(y => y.id !== x);
-    ancCommit(); ancPintarR(); render(); return;
-  }
-  if (k === 'arreglo') { ancLeerR(); return ancAbrirArreglo(x); }
-  if (k === 'arregloNuevo') { ancLeerR(); return ancAbrirArreglo(null); }
+  if (k === 'acuerdo') { ancLeerR(); return ancAbrirAcuerdo(x); }
+  if (k === 'acuerdoNuevo') { ancLeerR(); return ancAbrirAcuerdo(null); }
   if (k === 'borrarR' || k === 'borrarV') {
     if (!confirm('¿Eliminar esto para siempre? Ya no se podrá restaurar.')) return;
     const reg = DB.ancianos.find(a => a.id === ancEd.a.id);
@@ -2685,10 +2689,6 @@ function ancOperacion(op, el) {
     ancCommitV(); toast('Quitado'); return ancPintarV();
   }
 }
-hoja.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.id === 'ancMetaTxt') { e.preventDefault(); ancOperacion('metaMas'); }
-});
-
 /* ================= Eventos de la vista ================= */
 vista.addEventListener('click', (e) => {
   const b = e.target.closest('[data-anc],[data-pred],[data-hoy-sem],[data-sem],#semObj,#semImg,#semImgOrig,#semVer,#semVersiones,#semPdf,#semPng,[data-total],[data-rec-editar],[data-rec-nuevo],[data-rec-hecho],[data-notas],[data-pap-ver],[data-pap-restaurar],[data-pap-purgar],[data-pap-vaciar],[data-ajfaltan],[data-omitir],[data-h],[data-vista-hist],[data-tema-modo],[data-hist-pub],[data-pdel],[data-adel],[data-form],[data-tarea],[data-nueva],[data-grupo],[data-ver],[data-editar-pub],[data-nuevo-pub],#guardarConexion,#sincronizarYa,#exportar,#importar,#btnDesbloquear,#btnBio,#btnTipos');
@@ -4114,6 +4114,7 @@ document.addEventListener('visibilitychange', () => {
     ocultaDesde = Date.now();
   } else {
     if (ocultaDesde && Date.now() - ocultaDesde > MINUTOS_PARA_BLOQUEAR * 60000) bloquear();
+    else if (bloqueada) { huellaPendiente = true; render(); }
     ocultaDesde = null;
     const caducados = vaciarVencidos();
     if (renovarVencidas() || caducados) render();
@@ -4170,17 +4171,17 @@ async function desactivarBiometria() {
   } catch (e) { toast('No se pudo verificar tu identidad'); }
 }
 
-async function desbloquear() {
+async function desbloquear(auto) {
   try {
     await verificarIdentidad();
     bloqueada = false;
     render();
-  } catch (e) { toast('No se pudo verificar. Intenta de nuevo'); }
+  } catch (e) { if (!auto) toast('No se pudo verificar. Intenta de nuevo'); }
 }
 
 function bloquear() {
   if (!BIO.credId) return;
-  bloqueada = true;
+  bloqueada = true; huellaPendiente = true;
   cerrarHoja();
   render();
 }
@@ -4191,6 +4192,8 @@ function vistaBloqueo() {
     <button class="boton" id="btnDesbloquear">Desbloquear con huella o rostro</button>
     <p>Si tu celular lo permite, también puedes usar su PIN o patrón.</p>
   </div>`;
+  /* Pide la huella sola, una vez cada que se bloquea. Si se cancela, queda el botón. */
+  if (huellaPendiente && document.visibilityState === 'visible') { huellaPendiente = false; setTimeout(() => { if (bloqueada) desbloquear(true); }, 200); }
 }
 
 /* ================= Navegación ================= */
