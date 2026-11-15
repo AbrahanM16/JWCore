@@ -575,6 +575,10 @@ aplicarTema();
   .pred-otro { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 6px; margin-top: 8px; align-items: center; }
   .pred-otro input, .pred-otro select { min-height: 40px; padding: 6px 10px; border: 0; border-radius: 10px; background: var(--campo); color: var(--tinta); font: inherit; min-width: 0; }
   .pred-otro .mini { height: 40px; }
+  .pred-esp { display: grid; grid-template-columns: minmax(0, 1fr) 112px auto; gap: 6px; margin-top: 8px; align-items: center; }
+  .pred-esp input, .pred-esp select { min-height: 40px; padding: 6px 10px; border: 0; border-radius: 10px; background: var(--campo); color: var(--tinta); font: inherit; min-width: 0; }
+  .pred-esp .mini { height: 40px; }
+  .pred-avisos .abs { grid-column: 1 / -1; }
   .campo > .pred-hm select { padding: 10px 12px; border: 0; border-radius: 14px; background: var(--campo); color: var(--tinta); font: inherit; min-height: 44px; }
   form:not([data-repite="otro"]) .solo-otro, form[data-tipo="curso"] .solo-revisita, form:not([data-tipo="curso"]) .solo-curso { display: none; }
   .pred-res { margin-top: 10px; padding-bottom: 16px; }
@@ -709,7 +713,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '14 nov 2026, 23:30';
+const VERSION_APP = '15 nov 2026, 00:20';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1593,7 +1597,7 @@ vista.addEventListener('input', (e) => {
   $('#buscarRes').innerHTML = resultadosBuscar();
 });
 
-/* ---------- Papelera: tareas, hermanos y recordatorios eliminados. Se guardan 30 días. ---------- */
+/* ---------- Papelera: tareas, hermanos, revisitas y cursos, y recordatorios eliminados. Se guardan 30 días. ---------- */
 const DIAS_PAPELERA = 30;
 let filtroPap = 'tareas';
 const ahoraISO = () => new Date().toISOString();
@@ -1603,10 +1607,11 @@ function itemsPapelera() {
   return {
     tareas: DB.tareas.filter(t => t.borrado && !t.purgado).sort((a, b) => (b.borradoEn || '').localeCompare(a.borradoEn || '')),
     hermanos: DB.publicadores.filter(p => p.borrado && !p.purgado).sort((a, b) => (b.borradoEn || '').localeCompare(a.borradoEn || '')),
+    contactos: DB.contactos.filter(c => c.borrado && !c.purgado).sort((a, b) => (b.borradoEn || '').localeCompare(a.borradoEn || '')),
     recs: recs.sort((a, b) => b.r.eliminado.localeCompare(a.r.eliminado))
   };
 }
-function totalPapelera() { const i = itemsPapelera(); return i.tareas.length + i.hermanos.length + i.recs.length; }
+function totalPapelera() { const i = itemsPapelera(); return i.tareas.length + i.hermanos.length + i.contactos.length + i.recs.length; }
 function textoPapelera(iso) {
   if (!iso) return 'Eliminada hace tiempo';
   const d = new Date(iso), quedan = Math.max(0, DIAS_PAPELERA - Math.floor((Date.now() - d.getTime()) / 86400000));
@@ -1618,13 +1623,14 @@ function filaPapelera(clave, titulo, sub) {
     <button type="button" class="mini peligro" data-pap-purgar="${clave}">Borrar</button></div>`;
 }
 function vistaPapelera() {
-  const it = itemsPapelera(), n = it.tareas.length + it.hermanos.length + it.recs.length;
+  const it = itemsPapelera(), n = totalPapelera();
   let html = cabecera('Papelera', 'CONGREGACIÓN CHICHICAXTLE', n + (n === 1 ? ' ELEMENTO' : ' ELEMENTOS'));
-  html += `<div class="segmentos sin-punto">${[['tareas', 'Tareas'], ['hermanos', 'Hermanos'], ['recs', 'Recordatorios']].map(([k, l]) =>
+  html += `<div class="segmentos sin-punto">${[['tareas', 'Tareas'], ['hermanos', 'Hermanos'], ['contactos', 'Revisitas y cursos'], ['recs', 'Recordatorios']].map(([k, l]) =>
     `<button class="segmento ${filtroPap === k ? 'activo' : ''}" data-pap-ver="${k}">${l}${it[k].length ? ' (' + it[k].length + ')' : ''}</button>`).join('')}</div>
     <p class="ayuda" style="margin:8px 4px 0">Lo que eliminas se queda aquí ${DIAS_PAPELERA} días y después se borra solo. Mientras tanto lo puedes restaurar.</p>`;
   const filas = filtroPap === 'tareas' ? it.tareas.map(t => filaPapelera('tarea|' + t.id, t.titulo, cargoPorId(t.cargo).nombre + '. ' + textoPapelera(t.borradoEn)))
     : filtroPap === 'hermanos' ? it.hermanos.map(p => filaPapelera('hermano|' + p.id, nombreCorto(p), 'Grupo ' + p.grupo + '. ' + textoPapelera(p.borradoEn)))
+    : filtroPap === 'contactos' ? it.contactos.map(c => filaPapelera('contacto|' + c.id, c.nombre, (c.tipo === 'curso' ? 'Curso' : 'Revisita') + (c.territorio ? ', territorio ' + c.territorio : '') + '. ' + textoPapelera(c.borradoEn)))
     : it.recs.map(x => filaPapelera('rec|' + x.p.id + '|' + x.r.id, nombreCorto(x.p) + ': ' + (x.r.texto || 'Recordatorio'), (x.r.fecha ? 'Era para el ' + fechaLarga(x.r.fecha) + '. ' : '') + textoPapelera(x.r.eliminado)));
   html += filas.length
     ? `<div class="panel" style="margin-top:12px;padding:2px 14px">${filas.join('')}</div><button type="button" class="mini peligro" data-pap-vaciar="1" style="margin-top:12px">Vaciar esta lista</button>`
@@ -1633,10 +1639,10 @@ function vistaPapelera() {
 }
 function papRestaurar(clave) {
   const [tipo, id, rid] = clave.split('|');
-  if (tipo === 'tarea' || tipo === 'hermano') {
-    const reg = (tipo === 'tarea' ? DB.tareas : DB.publicadores).find(x => x.id === id); if (!reg) return;
+  if (tipo === 'tarea' || tipo === 'hermano' || tipo === 'contacto') {
+    const reg = (tipo === 'tarea' ? DB.tareas : tipo === 'contacto' ? DB.contactos : DB.publicadores).find(x => x.id === id); if (!reg) return;
     delete reg.borrado; delete reg.borradoEn;
-    marcarCambio(tipo === 'tarea' ? 'tareas' : 'publicadores', reg);
+    marcarCambio(tipo === 'tarea' ? 'tareas' : tipo === 'contacto' ? 'contactos' : 'publicadores', reg);
     if (tipo === 'tarea') renovarVencidas();
   } else {
     const p = DB.publicadores.find(x => x.id === id), r = p && (p.recordatorios || []).find(x => x.id === rid); if (!r) return;
@@ -1645,9 +1651,9 @@ function papRestaurar(clave) {
   render(); toast('Restaurado');
 }
 function purgar(tipo, id, rid) {
-  if (tipo === 'tarea' || tipo === 'hermano') {
-    const reg = (tipo === 'tarea' ? DB.tareas : DB.publicadores).find(x => x.id === id);
-    if (reg) { reg.purgado = true; marcarCambio(tipo === 'tarea' ? 'tareas' : 'publicadores', reg); }
+  if (tipo === 'tarea' || tipo === 'hermano' || tipo === 'contacto') {
+    const reg = (tipo === 'tarea' ? DB.tareas : tipo === 'contacto' ? DB.contactos : DB.publicadores).find(x => x.id === id);
+    if (reg) { reg.purgado = true; marcarCambio(tipo === 'tarea' ? 'tareas' : tipo === 'contacto' ? 'contactos' : 'publicadores', reg); }
   } else {
     const p = DB.publicadores.find(x => x.id === id); if (!p) return;
     p.recordatorios = (p.recordatorios || []).filter(x => x.id !== rid);
@@ -1661,7 +1667,7 @@ function papPurgar(clave) {
 }
 function papVaciar() {
   const it = itemsPapelera();
-  const lote = filtroPap === 'tareas' ? it.tareas.map(t => ['tarea', t.id]) : filtroPap === 'hermanos' ? it.hermanos.map(p => ['hermano', p.id]) : it.recs.map(x => ['rec', x.p.id, x.r.id]);
+  const lote = filtroPap === 'tareas' ? it.tareas.map(t => ['tarea', t.id]) : filtroPap === 'hermanos' ? it.hermanos.map(p => ['hermano', p.id]) : filtroPap === 'contactos' ? it.contactos.map(c => ['contacto', c.id]) : it.recs.map(x => ['rec', x.p.id, x.r.id]);
   if (!lote.length || !confirm('¿Borrar para siempre ' + lote.length + (lote.length === 1 ? ' elemento' : ' elementos') + '? Ya no se podrán restaurar.')) return;
   lote.forEach(l => purgar(...l)); render(); toast('Lista vaciada');
 }
@@ -1669,7 +1675,7 @@ function papVaciar() {
 function vaciarVencidos() {
   const limite = Date.now() - DIAS_PAPELERA * 86400000, viejo = (iso) => iso && new Date(iso).getTime() < limite;
   let n = 0;
-  [['tareas', DB.tareas], ['publicadores', DB.publicadores]].forEach(([tipo, lista]) => lista.forEach(x => {
+  [['tareas', DB.tareas], ['publicadores', DB.publicadores], ['contactos', DB.contactos]].forEach(([tipo, lista]) => lista.forEach(x => {
     if (x.borrado && !x.purgado && viejo(x.borradoEn)) { x.purgado = true; marcarCambio(tipo, x); n++; }
   }));
   DB.publicadores.forEach(p => {
@@ -2948,7 +2954,13 @@ function textoAviso(m) {
   const [n, u] = m % 1440 === 0 ? [m / 1440, 'día'] : m % 60 === 0 ? [m / 60, 'hora'] : [m, 'minuto'];
   return n + ' ' + u + (n === 1 ? '' : 's') + ' antes';
 }
-const textoSerie = (r) => [r.cada ? textoCada(r.cada) : '', r.hora && r.avisos && r.avisos.length ? 'Avisos: ' + r.avisos.map(textoAviso).join(', ').toLowerCase() : ''].filter(Boolean).join('. ');
+/* Un aviso puede ser antes de la hora de la visita (avisos, en minutos) o a una hora fija de ese día o de días antes (avisosH: { d, h }) */
+const textoAvisoH = (x) => (x.d === 0 ? 'El mismo día' : x.d === 7 ? '1 semana antes' : x.d + (x.d === 1 ? ' día antes' : ' días antes')) + ' a las ' + x.h;
+const ordenAvisoH = (a, b) => b.d - a.d || a.h.localeCompare(b.h);
+function textoSerie(r) {
+  const av = (r.hora && r.avisos ? r.avisos.map(textoAviso) : []).concat((r.avisosH || []).map(textoAvisoH));
+  return [r.cada ? textoCada(r.cada) : '', av.length ? 'Avisos: ' + av.join(', ').toLowerCase() : ''].filter(Boolean).join('. ');
+}
 const ocurrencia = (r, k) => r.cada.u === 'm' ? sumarMeses(r.fecha, r.cada.n * k) : sumarDias(r.fecha, r.cada.n * k * (r.cada.u === 's' ? 7 : 1));
 /* Fechas de la serie entre dos días, sin contar la planeada */
 function serieEntre(r, desde, hasta) {
@@ -2961,17 +2973,20 @@ const fechasDeVisita = (r, desde, hasta) => (r.fecha >= desde && r.fecha <= hast
 const siguienteDe = (r) => serieEntre(r, r.fecha < hoyISO() ? hoyISO() : sumarDias(r.fecha, 1), sumarDias(hoyISO(), 800))[0] || '';
 function chipsAvisos() {
   return [...new Set(PR_AVISOS.concat(prEd.avisos))].sort((a, b) => a - b).map(m =>
-    `<button type="button" class="mini ${prEd.avisos.includes(m) ? 'on-filtro' : ''}" data-pred="aviso|${m}" aria-pressed="${prEd.avisos.includes(m)}">${textoAviso(m)}</button>`).join('');
+    `<button type="button" class="mini ${prEd.avisos.includes(m) ? 'on-filtro' : ''}" data-pred="aviso|${m}" aria-pressed="${prEd.avisos.includes(m)}">${textoAviso(m)}</button>`).join('') +
+    prEd.avisosH.map((x, i) => `<button type="button" class="mini on-filtro abs" data-pred="avisoH|${i}" aria-label="Quitar el aviso: ${esc(textoAvisoH(x))}">${esc(textoAvisoH(x))} ×</button>`).join('');
 }
 function camposSerie(r) {
   prEd.avisos = (r && Array.isArray(r.avisos) ? r.avisos : [0]).slice();
+  prEd.avisosH = (r && Array.isArray(r.avisosH) ? r.avisosH : []).map(x => ({ d: x.d, h: x.h }));
   const cada = r && r.cada || { n: 1, u: 's' };
   return `<label class="campo"><span>Se repite</span><select name="repite">${PR_REPITE.map(([v, t]) => `<option value="${v}" ${repiteDe(r) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <div class="campo solo-otro"><span>Cada cuánto</span><div class="pred-hm"><input type="number" name="cadaN" min="1" max="365" inputmode="numeric" value="${cada.n}">
         <select name="cadaU">${Object.keys(PR_UNIDADES).map(u => `<option value="${u}" ${cada.u === u ? 'selected' : ''}>${PR_UNIDADES[u][1]}</option>`).join('')}</select></div></div>
       <div class="campo"><span>Avisarme antes de la visita</span><div class="pred-avisos" id="prAvisos">${chipsAvisos()}</div>
         <div class="pred-otro"><input type="number" id="prAvisoN" min="1" inputmode="numeric" placeholder="Otro" aria-label="Cuánto antes"><select id="prAvisoU" aria-label="Unidad"><option value="1">minutos antes</option><option value="60">horas antes</option><option value="1440">días antes</option></select><button type="button" class="mini" data-pred="avisoOtro">Agregar</button></div>
-        <div class="ayuda">Los avisos se cuentan desde la hora de la visita, así que necesitan que la pongas. Puedes elegir varios. Llegan por Telegram y, si lo tienes activo, por correo. Si la visita se repite, los avisos se repiten con ella.</div></div>`;
+        <div class="pred-esp"><select id="prEspD" aria-label="Qué día"><option value="0">El mismo día</option><option value="1">1 día antes</option><option value="2">2 días antes</option><option value="3">3 días antes</option><option value="7">1 semana antes</option></select><input type="time" id="prEspH" aria-label="A qué hora"><button type="button" class="mini" data-pred="avisoEsp">A esa hora</button></div>
+        <div class="ayuda">Los de "antes" se cuentan desde la hora de la visita, así que necesitan que la pongas. Con "A esa hora" eliges el día y la hora exacta del aviso, aunque la visita no tenga hora. Puedes combinar varios. Llegan por Telegram y, si lo tienes activo, por correo, y se repiten con la visita.</div></div>`;
 }
 function serieDeForm(f) {
   const v = f.get('repite') || '';
@@ -3196,7 +3211,7 @@ function abrirContactoForm(id) {
   abrirHoja(`<h3>${id ? 'Editar datos' : 'Agregar revisita o curso'}</h3>
     <form id="formPrContacto" data-tipo="revisita" data-repite="">
       <label class="campo"><span>Nombre</span><input name="nombre" required maxlength="120" value="${esc(c.nombre)}" autocomplete="off"></label>
-      ${id ? '' : `<label class="campo"><span>Es</span><select name="tipo"><option value="revisita">Revisita</option><option value="curso">Curso desde el principio</option></select></label>`}
+      ${id ? '' : `<label class="campo"><span>Es</span><select name="tipo"><option value="revisita">Revisita</option><option value="curso">Curso</option></select></label>`}
       <label class="campo"><span>Número de territorio</span><input name="territorio" maxlength="20" value="${esc(c.territorio)}" placeholder="Ej. 12" autocomplete="off"></label>
       <label class="campo"><span>Dirección</span><input name="direccion" maxlength="300" value="${esc(c.direccion)}" placeholder="Calle, número, referencias" autocomplete="off"></label>
       <label class="campo"><span>Notas</span><textarea name="notas" maxlength="${PR_MAX_TXT * 2}" placeholder="Intereses, preguntas, mejor hora para visitarlo">${esc(c.notas)}</textarea></label>
@@ -3479,6 +3494,13 @@ function predOperacion(spec, el) {
       if (i < 0) prEd.avisos.push(m); else prEd.avisos.splice(i, 1);
       $('#prAvisos').innerHTML = chipsAvisos(); return;
     }
+    case 'avisoH': prEd.avisosH.splice(Number(a), 1); $('#prAvisos').innerHTML = chipsAvisos(); return;
+    case 'avisoEsp': {
+      const x = { d: Number($('#prEspD').value), h: $('#prEspH').value };
+      if (!x.h) return toast('Elige la hora del aviso');
+      if (!prEd.avisosH.some(y => y.d === x.d && y.h === x.h)) prEd.avisosH.push(x);
+      prEd.avisosH.sort(ordenAvisoH); $('#prEspH').value = ''; $('#prAvisos').innerHTML = chipsAvisos(); return;
+    }
     case 'avisoOtro': {
       const m = Math.round(Number($('#prAvisoN').value) * Number($('#prAvisoU').value));
       if (!(m > 0)) return toast('Escribe cuánto tiempo antes');
@@ -3507,8 +3529,8 @@ function predOperacion(spec, el) {
     case 'restaurar': { const c = contactoPorId(a); delete c.archivado; cambioContacto(c); render(); toast('Restaurado'); return abrirContacto(a); }
     case 'eliminarC': {
       const c = contactoPorId(a);
-      if (!c || !confirm('¿Eliminar a ' + c.nombre + ' y todo su historial? No se puede deshacer desde la app.')) return;
-      c.borrado = true; cambioContacto(c); render(); toast('Eliminado'); return cerrarHoja();
+      if (!c || !confirm('¿Eliminar a ' + c.nombre + '? Se va a la Papelera con todo su historial y ahí lo puedes restaurar durante ' + DIAS_PAPELERA + ' días.')) return;
+      c.borrado = true; c.borradoEn = ahoraISO(); cambioContacto(c); render(); toast('Enviado a la Papelera'); return cerrarHoja();
     }
   }
 }
@@ -3536,6 +3558,7 @@ function predGuardar(form) {
     if (prEd.nuevo && txt('visitaFecha')) {
       const v = { id: nuevoId('r'), fecha: txt('visitaFecha'), hora: txt('visitaHora'), nota: '' };
       if (v.hora) v.avisos = prEd.avisos.slice().sort((x, y) => x - y);
+      if (prEd.avisosH.length) v.avisosH = prEd.avisosH.slice();
       const cada = serieDeForm(f);
       if (cada) v.cada = cada;
       c.recordatorios.push(v);
@@ -3551,6 +3574,7 @@ function predGuardar(form) {
     if (!r) { r = { id: nuevoId('r') }; c.recordatorios.push(r); }
     r.fecha = txt('fecha'); r.hora = txt('hora'); r.nota = txt('nota');
     if (r.hora) r.avisos = prEd.avisos.slice().sort((x, y) => x - y); else delete r.avisos;
+    if (prEd.avisosH.length) r.avisosH = prEd.avisosH.slice(); else delete r.avisosH;
     const cada = serieDeForm(f);
     if (cada) r.cada = cada; else delete r.cada;
     cambioContacto(c); render(); toast('Visita planeada guardada');
@@ -3564,6 +3588,7 @@ function predGuardar(form) {
     if (txt('sigFecha')) {
       const sig = { id: nuevoId('r'), fecha: txt('sigFecha'), hora: txt('sigHora'), nota: previo.cada ? previo.nota || '' : '' };
       if (previo.avisos) sig.avisos = previo.avisos;
+      if (previo.avisosH) sig.avisosH = previo.avisosH;
       if (previo.cada) sig.cada = previo.cada;
       c.recordatorios.push(sig);
     }
@@ -3590,20 +3615,23 @@ function predGuardar(form) {
 /* Aviso del sistema de cada visita, con la anticipación elegida, mientras la app esté abierta o en segundo plano. Con la app cerrada avisan el correo y Telegram (Avisos.gs). */
 function revisarVisitas() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const ahora = new Date(), hoy = hoyISO(), desde = sumarDias(hoy, -1), hasta = sumarDias(hoy, PR_AVISO_MAX / 1440 + 1);
+  const ahora = new Date(), hoy = hoyISO(), desde = sumarDias(hoy, -1), hasta = sumarDias(hoy, PR_AVISO_MAX / 1440 + 8);
   let cambio = false;
   contactosActivos().forEach(c => (c.recordatorios || []).forEach(r => {
-    if (!r.hora) return;
-    fechasDeVisita(r, desde, hasta).forEach(fecha => (r.avisos || [0]).forEach(m => {
-      const k = 'visita:' + r.id + ':' + fecha + ':' + m, cuando = new Date(new Date(fecha + 'T' + r.hora).getTime() - m * 60000);
-      if (AVISADOS[k] || cuando > ahora) return;
-      AVISADOS[k] = hoy; cambio = true;
-      if (ahora - cuando > 3 * 3600e3) return;
-      const cuerpo = (fecha === hoy ? 'Hoy' : fechaLarga(fecha)) + ', ' + r.hora + (c.direccion ? ' · ' + c.direccion : '');
-      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(reg => reg.showNotification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png', tag: k }));
-      } else new Notification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png' });
-    }));
+    fechasDeVisita(r, desde, hasta).forEach(fecha => {
+      const avisos = (r.hora ? (r.avisos || [0]).map(m => ({ k: ':' + m, cuando: new Date(new Date(fecha + 'T' + r.hora).getTime() - m * 60000) })) : [])
+        .concat((r.avisosH || []).map(x => ({ k: ':h' + x.d + x.h, cuando: new Date(sumarDias(fecha, -x.d) + 'T' + x.h) })));
+      avisos.forEach(a => {
+        const k = 'visita:' + r.id + ':' + fecha + a.k;
+        if (AVISADOS[k] || a.cuando > ahora) return;
+        AVISADOS[k] = hoy; cambio = true;
+        if (ahora - a.cuando > 3 * 3600e3) return;
+        const cuerpo = (fecha === hoy ? 'Hoy' : fechaLarga(fecha)) + (r.hora ? ', ' + r.hora : '') + (c.direccion ? ' · ' + c.direccion : '');
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg => reg.showNotification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png', tag: k }));
+        } else new Notification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png' });
+      });
+    });
   }));
   const viejo = sumarDias(hoy, -40);
   Object.keys(AVISADOS).forEach(k => { if (k.startsWith('visita:') && AVISADOS[k] < viejo) { delete AVISADOS[k]; cambio = true; } });
