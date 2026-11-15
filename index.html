@@ -234,12 +234,18 @@ aplicarTema();
   .dos > * { min-width: 0; }
   .ayuda { font-size: 12.5px; line-height: 1.5; color: var(--gris-suave); margin-top: 4px; }
   .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  /* En las hojas, los botones van en dos columnas iguales; si son impares, el primero ocupa el renglón completo */
+  .hoja .acciones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hoja .acciones > * { width: 100%; min-width: 0; margin: 0; justify-content: center; text-align: center; }
+  .hoja .acciones > :first-child:nth-last-child(odd) { grid-column: 1 / -1; }
+  .hoja .acciones .boton { padding: 6px 10px; line-height: 1.2; }
+  .hoja .acciones .mini { height: auto; min-height: 36px; padding: 4px 8px; }
   .boton {
     border: 0; min-height: 46px; padding: 0 22px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none;
     display: inline-flex; align-items: center; justify-content: center; color: var(--sobre-dorado); background: var(--dorado);
   }
 
-  .boton.sec { color: var(--navy-t); background: var(--panel); box-shadow: var(--vidrio); }
+  .boton.sec { margin-top: 0; padding-top: 0; border-top: 0; color: var(--navy-t); background: var(--panel); box-shadow: var(--vidrio); }
   .boton.verde { color: #fff; background: var(--verde); }
 
   .boton.peligro { color: var(--rojo-t); background: var(--rojo-bg); box-shadow: none; }
@@ -557,6 +563,20 @@ aplicarTema();
   .fila-hoy { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); column-gap: 28px; }
   .btn-hoy .tx small.rojo, .pred-fila .d.rojo { color: var(--rojo-t); font-weight: 600; }
   .pred-tabs { margin: 12px 0 6px; }
+  @media (max-width: 899px) {
+    .pred-dos[data-tab="contactos"] .pred-calendario, .pred-dos[data-tab="horas"] .pred-lista { display: none; }
+  }
+  @media (min-width: 900px) {
+    .segmento.pred-tabs { display: none; }
+    .pred-dos { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 36px; align-items: start; margin-top: 12px; }
+  }
+  .pred-avisos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .pred-avisos .mini { height: auto; min-height: 36px; padding: 4px 6px; }
+  .pred-otro { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 6px; margin-top: 8px; align-items: center; }
+  .pred-otro input, .pred-otro select { min-height: 40px; padding: 6px 10px; border: 0; border-radius: 10px; background: var(--campo); color: var(--tinta); font: inherit; min-width: 0; }
+  .pred-otro .mini { height: 40px; }
+  .campo > .pred-hm select { padding: 10px 12px; border: 0; border-radius: 14px; background: var(--campo); color: var(--tinta); font: inherit; min-height: 44px; }
+  form:not([data-repite="otro"]) .solo-otro, form[data-tipo="curso"] .solo-revisita, form:not([data-tipo="curso"]) .solo-curso { display: none; }
   .pred-res { margin-top: 10px; padding-bottom: 16px; }
 
   .pred-mes { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -689,7 +709,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '14 nov 2026, 12:00';
+const VERSION_APP = '14 nov 2026, 21:40';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -2864,7 +2884,7 @@ function abrirHoySemana() {
 
 /* ================= Predicación: horas, revisitas y cursos ================= */
 let servidorPred = true;
-let predTab = 'horas', predMes = hoyISO().slice(0, 7);
+let predTab = 'contactos', predMes = hoyISO().slice(0, 7);
 let filtroPred = { q: '', tipo: '', terr: '', orden: 'proxima' };
 let prEd = null, prVer = null;
 const PR_DIAS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -2918,12 +2938,53 @@ function haceDias(iso) {
   const n = diasDesde(iso);
   return n === 0 ? 'hoy' : n === 1 ? 'ayer' : n === -1 ? 'mañana' : n > 0 ? 'hace ' + n + ' días' : 'en ' + (-n) + ' días';
 }
+/* Una visita planeada puede repetirse (cada: { n, u } con u en días, semanas o meses) y llevar avisos en minutos antes de su hora */
+const PR_REPITE = [['', 'No se repite'], ['1s', 'Cada semana'], ['2s', 'Cada 2 semanas'], ['1m', 'Cada mes'], ['otro', 'Otro intervalo']];
+const PR_AVISOS = [0, 30, 60, 120, 180], PR_AVISO_MAX = 43200, PR_UNIDADES = { d: ['día', 'días'], s: ['semana', 'semanas'], m: ['mes', 'meses'] };
+const repiteDe = (r) => { const k = r && r.cada ? r.cada.n + r.cada.u : ''; return PR_REPITE.some(x => x[0] === k) ? k : 'otro'; };
+const textoCada = (c) => 'Cada ' + (c.n === 1 ? '' : c.n + ' ') + PR_UNIDADES[c.u][c.n === 1 ? 0 : 1];
+function textoAviso(m) {
+  if (!m) return 'A la hora';
+  const [n, u] = m % 1440 === 0 ? [m / 1440, 'día'] : m % 60 === 0 ? [m / 60, 'hora'] : [m, 'minuto'];
+  return n + ' ' + u + (n === 1 ? '' : 's') + ' antes';
+}
+const textoSerie = (r) => [r.cada ? textoCada(r.cada) : '', r.hora && r.avisos && r.avisos.length ? 'Avisos: ' + r.avisos.map(textoAviso).join(', ').toLowerCase() : ''].filter(Boolean).join('. ');
+const ocurrencia = (r, k) => r.cada.u === 'm' ? sumarMeses(r.fecha, r.cada.n * k) : sumarDias(r.fecha, r.cada.n * k * (r.cada.u === 's' ? 7 : 1));
+/* Fechas de la serie entre dos días, sin contar la planeada */
+function serieEntre(r, desde, hasta) {
+  const l = [];
+  if (r.cada) for (let k = 1; k < 800; k++) { const f = ocurrencia(r, k); if (f > hasta) break; if (f >= desde) l.push(f); }
+  return l;
+}
+const fechasDeVisita = (r, desde, hasta) => (r.fecha >= desde && r.fecha <= hasta ? [r.fecha] : []).concat(serieEntre(r, desde, hasta));
+/* Siguiente fecha de la serie: posterior a la planeada y no anterior a hoy */
+const siguienteDe = (r) => serieEntre(r, r.fecha < hoyISO() ? hoyISO() : sumarDias(r.fecha, 1), sumarDias(hoyISO(), 800))[0] || '';
+function chipsAvisos() {
+  return [...new Set(PR_AVISOS.concat(prEd.avisos))].sort((a, b) => a - b).map(m =>
+    `<button type="button" class="mini ${prEd.avisos.includes(m) ? 'on-filtro' : ''}" data-pred="aviso|${m}" aria-pressed="${prEd.avisos.includes(m)}">${textoAviso(m)}</button>`).join('');
+}
+function camposSerie(r) {
+  prEd.avisos = (r && Array.isArray(r.avisos) ? r.avisos : [0]).slice();
+  const cada = r && r.cada || { n: 1, u: 's' };
+  return `<label class="campo"><span>Se repite</span><select name="repite">${PR_REPITE.map(([v, t]) => `<option value="${v}" ${repiteDe(r) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+      <div class="campo solo-otro"><span>Cada cuánto</span><div class="pred-hm"><input type="number" name="cadaN" min="1" max="365" inputmode="numeric" value="${cada.n}">
+        <select name="cadaU">${Object.keys(PR_UNIDADES).map(u => `<option value="${u}" ${cada.u === u ? 'selected' : ''}>${PR_UNIDADES[u][1]}</option>`).join('')}</select></div></div>
+      <div class="campo"><span>Avisarme</span><div class="pred-avisos" id="prAvisos">${chipsAvisos()}</div>
+        <div class="pred-otro"><input type="number" id="prAvisoN" min="1" inputmode="numeric" placeholder="Otro" aria-label="Cuánto antes"><select id="prAvisoU" aria-label="Unidad"><option value="1">minutos antes</option><option value="60">horas antes</option><option value="1440">días antes</option></select><button type="button" class="mini" data-pred="avisoOtro">Agregar</button></div>
+        <div class="ayuda">Puedes elegir varios. Los avisos necesitan la hora de la visita y llegan por correo y Telegram. Si la visita se repite, se repiten con ella.</div></div>`;
+}
+function serieDeForm(f) {
+  const v = f.get('repite') || '';
+  if (v === 'otro') return { n: Math.min(365, Math.max(1, Math.round(Number(f.get('cadaN')) || 1))), u: PR_UNIDADES[f.get('cadaU')] ? f.get('cadaU') : 's' };
+  return v ? { n: Number(v.slice(0, -1)), u: v.slice(-1) } : null;
+}
 function textoUltima(c) { const f = ultimaVisita(c); return f ? 'Última visita ' + haceDias(f) : 'Sin visitas registradas'; }
 function textoProxima(r) {
   if (!r) return 'Sin visita planeada';
   const hr = r.hora ? ', ' + r.hora : '';
-  if (r.fecha < hoyISO()) return 'Atrasada: ' + fechaLarga(r.fecha) + hr + ' (' + haceDias(r.fecha) + ')';
-  return 'Próxima visita: ' + (r.fecha === hoyISO() ? 'hoy' : r.fecha === sumarDias(hoyISO(), 1) ? 'mañana' : fechaLarga(r.fecha)) + hr;
+  const serie = r.cada ? ' (' + textoCada(r.cada).toLowerCase() + ')' : '';
+  if (r.fecha < hoyISO()) return 'Atrasada: ' + fechaLarga(r.fecha) + hr + ' (' + haceDias(r.fecha) + ')' + serie;
+  return 'Próxima visita: ' + (r.fecha === hoyISO() ? 'hoy' : r.fecha === sumarDias(hoyISO(), 1) ? 'mañana' : fechaLarga(r.fecha)) + hr + serie;
 }
 function visitasPendientes() {
   const hoy = hoyISO(), lista = [];
@@ -2971,9 +3032,10 @@ function vistaPredicacion(tab) {
   if (tab === 'horas' || tab === 'contactos') predTab = tab;
   let html = cabecera('Predicación', 'CONGREGACIÓN CHICHICAXTLE', 'HORAS, REVISITAS Y CURSOS');
   html += `<div class="segmento pred-tabs">
-    <button type="button" class="${predTab === 'horas' ? 'on' : ''}" data-pred="tab|horas">Horas</button>
-    <button type="button" class="${predTab === 'contactos' ? 'on' : ''}" data-pred="tab|contactos">Revisitas y cursos</button></div>`;
-  vista.innerHTML = html + (predTab === 'horas' ? vistaHoras() : vistaContactos());
+    <button type="button" class="${predTab === 'contactos' ? 'on' : ''}" data-pred="tab|contactos">Revisitas y cursos</button>
+    <button type="button" class="${predTab === 'horas' ? 'on' : ''}" data-pred="tab|horas">Calendario y horas</button></div>`;
+  /* En pantalla ancha se ven las dos partes juntas, con el calendario a la derecha; en el celular, una pestaña a la vez */
+  vista.innerHTML = html + `<div class="pred-dos" data-tab="${predTab}"><section class="pred-lista">${vistaContactos()}</section><section class="pred-calendario">${vistaHoras()}</section></div>`;
 }
 
 function vistaHoras() {
@@ -2982,7 +3044,7 @@ function vistaHoras() {
   const dias = new Date(primero.getFullYear(), primero.getMonth() + 1, 0).getDate();
   const hueco = (primero.getDay() + 6) % 7;
   const rec = {};
-  contactosActivos().forEach(c => (c.recordatorios || []).forEach(r => { if (r.fecha.startsWith(ym)) rec[r.fecha] = true; }));
+  contactosActivos().forEach(c => (c.recordatorios || []).forEach(r => fechasDeVisita(r, ym + '-01', ym + '-31').forEach(f => { rec[f] = true; })));
   let cal = PR_DIAS.map(d => `<div class="pred-cab">${d}</div>`).join('') + '<span class="pred-dia vacio"></span>'.repeat(hueco);
   for (let d = 1; d <= dias; d++) {
     const iso = ym + '-' + pad(d), m = minutosDia(iso);
@@ -3081,7 +3143,7 @@ function abrirDia(iso) {
   DB.contactos.filter(c => !c.borrado).forEach(c => (c.visitas || []).forEach(v => { if (v.fecha === iso) vis.push({ c, v }); }));
   vis.sort((a, b) => (a.v.hora || '').localeCompare(b.v.hora || ''));
   const pend = [];
-  contactosActivos().forEach(c => (c.recordatorios || []).forEach(r => { if (r.fecha === iso) pend.push({ c, r }); }));
+  contactosActivos().forEach(c => (c.recordatorios || []).forEach(r => { if (fechasDeVisita(r, iso, iso).length) pend.push({ c, r, serie: r.fecha !== iso }); }));
   pend.sort((a, b) => ordenVisita(a.r, b.r));
   prEd = { iso };
   abrirHoja(`<h3>${DIAS_SEM[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}</h3>
@@ -3093,8 +3155,8 @@ function abrirDia(iso) {
       <div class="pred-sumar"><button type="button" class="mini" data-pred="sumar|15">+15 min</button><button type="button" class="mini" data-pred="sumar|30">+30 min</button><button type="button" class="mini" data-pred="sumar|60">+1 h</button></div>
       <div class="acciones"><button class="boton" type="submit">Guardar</button>${m ? '<button class="boton peligro" type="button" data-pred="quitarHoras">Quitar horas</button>' : ''}<button class="boton sec" type="button" id="btnCerrar">Cerrar</button></div>
     </form>
-    ${pend.length ? `<h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:16px">Visitas planeadas</h2>${pend.map(x => `<div class="pred-item"><div class="pred-ih"><b>${esc(x.c.nombre)}</b><span class="chip ambar">${x.r.hora ? esc(x.r.hora) : 'Sin hora'}</span></div>${x.r.nota ? `<div class="d">${esc(x.r.nota)}</div>` : ''}
-      <div class="acciones pred-acc"><button type="button" class="mini on-filtro" data-pred="completar|${esc(x.c.id)}|${esc(x.r.id)}|d:${iso}">Completar</button><button type="button" class="mini" data-pred="ver|${esc(x.c.id)}">Contacto</button></div></div>`).join('')}` : ''}
+    ${pend.length ? `<h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:16px">Visitas planeadas</h2>${pend.map(x => `<div class="pred-item"><div class="pred-ih"><b>${esc(x.c.nombre)}</b><span class="chip ambar">${x.r.hora ? esc(x.r.hora) : 'Sin hora'}</span></div>${x.r.nota ? `<div class="d">${esc(x.r.nota)}</div>` : ''}${x.r.cada ? `<div class="d">${esc(textoCada(x.r.cada))}</div>` : ''}
+      <div class="acciones pred-acc">${x.serie ? '' : `<button type="button" class="mini on-filtro" data-pred="completar|${esc(x.c.id)}|${esc(x.r.id)}|d:${iso}">Completar</button>`}<button type="button" class="mini" data-pred="ver|${esc(x.c.id)}">Contacto</button></div></div>`).join('')}` : ''}
     ${vis.length ? `<h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:16px">Visitas hechas</h2>${vis.map(x => `<button type="button" class="pred-item pred-btn" data-pred="ver|${esc(x.c.id)}"><div class="pred-ih"><b>${esc(x.c.nombre)}</b>${x.v.hora ? `<span class="chip">${esc(x.v.hora)}</span>` : ''}</div>${x.v.nota ? `<div class="d">${esc(x.v.nota)}</div>` : ''}</button>`).join('')}` : ''}`);
 }
 
@@ -3114,14 +3176,16 @@ function abrirContacto(id) {
     ${tieneCoord(c) || c.mapaUrl ? `<p class="ayuda" style="margin-top:4px">${esc(textoUbicacion(c))}</p>` : ''}
     ${c.notas ? `<div class="pred-notas">${esc(c.notas)}</div>` : ''}
     <h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:17px">Recordatorios de visita<span class="cuenta">${recs.length}</span></h2>
-    ${recs.length ? recs.map(r => `<div class="pred-item"><div class="pred-ih"><b>${esc(fechaLarga(r.fecha))}${r.hora ? ', ' + esc(r.hora) : ''}</b><span class="chip ${r.fecha < hoyISO() ? 'rojo' : r.fecha === hoyISO() ? 'ambar' : ''}">${esc(haceDias(r.fecha))}</span></div>${r.nota ? `<div class="d">${esc(r.nota)}</div>` : ''}
+    ${recs.length ? recs.map(r => `<div class="pred-item"><div class="pred-ih"><b>${esc(fechaLarga(r.fecha))}${r.hora ? ', ' + esc(r.hora) : ''}</b><span class="chip ${r.fecha < hoyISO() ? 'rojo' : r.fecha === hoyISO() ? 'ambar' : ''}">${esc(haceDias(r.fecha))}</span></div>${r.nota ? `<div class="d">${esc(r.nota)}</div>` : ''}${textoSerie(r) ? `<div class="d">${esc(textoSerie(r))}</div>` : ''}
       <div class="acciones pred-acc"><button type="button" class="mini on-filtro" data-pred="completar|${esc(c.id)}|${esc(r.id)}|c">Completar</button><button type="button" class="mini" data-pred="recEditar|${esc(c.id)}|${esc(r.id)}|c">Editar</button></div></div>`).join('') : '<div class="vacio" style="padding:10px 14px">No hay visitas planeadas.</div>'}
     <div class="acciones"><button type="button" class="boton sec" data-pred="recNuevo|${esc(c.id)}|c">+ Recordatorio</button><button type="button" class="boton sec" data-pred="visitaNueva|${esc(c.id)}">Registrar visita ya hecha</button></div>
     <h2 class="titulo-seccion" style="margin:18px 2px 6px;font-size:17px">Historial de visitas<span class="cuenta">${vis.length}</span></h2>
     ${vis.length ? vis.map(v => `<button type="button" class="pred-item pred-btn" data-pred="visitaEditar|${esc(c.id)}|${esc(v.id)}"><div class="pred-ih"><b>${esc(fechaLarga(v.fecha))}${v.hora ? ', ' + esc(v.hora) : ''}</b><span class="meta" style="margin:0">${v.primera ? '<span class="chip">Primera conversación</span>' : ''}${v.curso ? '<span class="chip verde">Curso</span>' : ''}</span></div>${v.nota ? `<div class="d">${esc(v.nota)}</div>` : ''}</button>`).join('') : '<div class="vacio" style="padding:10px 14px">Todavía no hay visitas registradas.</div>'}
     <div class="acciones" style="margin-top:16px"><button type="button" class="boton sec" data-pred="editarC|${esc(c.id)}">Editar datos</button>
-      ${c.archivado ? '' : c.tipo === 'revisita' ? `<button type="button" class="boton verde" data-pred="aCurso|${esc(c.id)}">Pasar a curso</button>` : `<button type="button" class="boton sec" data-pred="aRevisita|${esc(c.id)}">Pasar a revisita</button>`}
-      ${c.archivado ? `<button type="button" class="boton sec" data-pred="restaurar|${esc(c.id)}">Restaurar</button><button type="button" class="boton peligro" data-pred="eliminarC|${esc(c.id)}">Eliminar</button>` : `<button type="button" class="boton sec" data-pred="archivar|${esc(c.id)}">Archivar</button>`}
+      ${c.archivado ? `<button type="button" class="boton sec" data-pred="restaurar|${esc(c.id)}">Restaurar</button>`
+        : (c.tipo === 'revisita' ? `<button type="button" class="boton verde" data-pred="aCurso|${esc(c.id)}">Pasar a curso</button>` : `<button type="button" class="boton sec" data-pred="aRevisita|${esc(c.id)}">Pasar a revisita</button>`) +
+          `<button type="button" class="boton sec" data-pred="archivar|${esc(c.id)}">Archivar</button>`}
+      <button type="button" class="boton peligro" data-pred="eliminarC|${esc(c.id)}">Eliminar</button>
       <button class="boton sec" type="button" id="btnCerrar">Cerrar</button></div>`);
 }
 
@@ -3130,13 +3194,15 @@ function abrirContactoForm(id) {
   if (!c) return cerrarHoja();
   prEd = { cid: id, nuevo: !id, c };
   abrirHoja(`<h3>${id ? 'Editar datos' : 'Agregar revisita o curso'}</h3>
-    <form id="formPrContacto">
+    <form id="formPrContacto" data-tipo="revisita">
       <label class="campo"><span>Nombre</span><input name="nombre" required maxlength="120" value="${esc(c.nombre)}" autocomplete="off"></label>
-      ${id ? '' : `<label class="campo"><span>Es</span><select name="tipo"><option value="revisita">Revisita</option><option value="curso">Curso</option></select></label>`}
+      ${id ? '' : `<label class="campo"><span>Es</span><select name="tipo"><option value="revisita">Revisita</option><option value="curso">Curso desde el principio</option></select></label>`}
       <label class="campo"><span>Número de territorio</span><input name="territorio" maxlength="20" value="${esc(c.territorio)}" placeholder="Ej. 12" autocomplete="off"></label>
       <label class="campo"><span>Dirección</span><input name="direccion" maxlength="300" value="${esc(c.direccion)}" placeholder="Calle, número, referencias" autocomplete="off"></label>
       <label class="campo"><span>Notas</span><textarea name="notas" maxlength="${PR_MAX_TXT * 2}" placeholder="Intereses, preguntas, mejor hora para visitarlo">${esc(c.notas)}</textarea></label>
-      ${id ? '' : `<div class="campo"><span>Primera conversación</span><div class="pred-hm"><input type="date" name="primeraFecha" required value="${hoyISO()}"><input type="time" name="primeraHora" value="${horaAhora()}"></div>
+      ${id ? '' : `<div class="campo solo-curso"><span>Curso desde</span><input type="date" name="cursoDesde" value="${hoyISO()}">
+        <div class="ayuda">Queda como curso desde ese día, sin primera conversación ni revisitas previas. Cada sesión se anota al completar su visita.</div></div>
+      <div class="campo solo-revisita"><span>Primera conversación</span><div class="pred-hm"><input type="date" name="primeraFecha" value="${hoyISO()}"><input type="time" name="primeraHora" value="${horaAhora()}"></div>
         <input name="primeraNota" maxlength="200" placeholder="Qué platicaron (opcional)" style="margin-top:8px" autocomplete="off">
         <div class="ayuda">Se guarda como la primera visita del historial, con el día y la hora de ahora. Puedes cambiarlos si fue antes.</div></div>`}
       <div class="campo"><span>Ubicación exacta</span>
@@ -3162,11 +3228,12 @@ function abrirRecordatorio(cid, rid, volver) {
   const r = rid ? c.recordatorios.find(x => x.id === rid) : null;
   prEd = { cid, rid: r ? r.id : null, volver };
   abrirHoja(`<h3>${r ? 'Editar recordatorio' : 'Nuevo recordatorio'}</h3><p class="ayuda" style="margin:-6px 0 10px">${esc(c.nombre)}</p>
-    <form id="formPrRec">
+    <form id="formPrRec" data-repite="${repiteDe(r)}">
       <label class="campo"><span>Día de la visita</span><input type="date" name="fecha" required value="${esc(r ? r.fecha : hoyISO())}"></label>
       <label class="campo"><span>Hora (opcional)</span><input type="time" name="hora" value="${esc(r ? r.hora || '' : '')}"></label>
       <label class="campo"><span>Nota (opcional)</span><input name="nota" maxlength="200" value="${esc(r ? r.nota || '' : '')}" placeholder="Ej. llevar la revista"></label>
-      <div class="acciones"><button class="boton" type="submit">Guardar</button><button class="boton sec" type="button" data-pred="volver|${esc(cid)}|${esc(volver)}">Cancelar</button>${r ? '<button class="boton peligro" type="button" data-pred="recBorrar">Eliminar</button>' : ''}</div>
+      ${camposSerie(r)}
+      <div class="acciones"><button class="boton" type="submit">Guardar</button>${r && r.cada ? '<button class="boton sec" type="button" data-pred="recSaltar">Pasar a la siguiente fecha</button>' : ''}${r ? '<button class="boton peligro" type="button" data-pred="recBorrar">Eliminar</button>' : ''}<button class="boton sec" type="button" data-pred="volver|${esc(cid)}|${esc(volver)}">Cancelar</button></div>
     </form>`);
 }
 
@@ -3174,13 +3241,15 @@ function abrirCompletar(cid, rid, volver) {
   const c = contactoPorId(cid), r = c && c.recordatorios.find(x => x.id === rid);
   if (!r) return cerrarHoja();
   prEd = { cid, rid, volver };
+  const sig = r.cada ? siguienteDe(r) : '';
   abrirHoja(`<h3>Visita realizada</h3><p class="ayuda" style="margin:-6px 0 10px">${esc(c.nombre)}. Estaba planeada para el ${esc(fechaLarga(r.fecha))}${r.hora ? ', ' + esc(r.hora) : ''}.</p>
     <form id="formPrCompletar">
       <label class="campo"><span>Día en que se visitó</span><input type="date" name="fecha" required value="${hoyISO()}"></label>
       <label class="campo"><span>Hora (opcional)</span><input type="time" name="hora" value="${esc(r.hora || '')}"></label>
       <label class="campo"><span>Nota (opcional)</span><textarea name="nota" maxlength="${PR_MAX_TXT}" placeholder="Qué pasó o qué platicaron">${esc(r.nota || '')}</textarea></label>
       <div class="campo"><span>Siguiente visita (opcional)</span>
-        <div class="pred-hm"><input type="date" name="sigFecha"><input type="time" name="sigHora"></div></div>
+        <div class="pred-hm"><input type="date" name="sigFecha" value="${sig}"><input type="time" name="sigHora" value="${sig ? esc(r.hora || '') : ''}"></div>
+        ${r.cada ? `<div class="ayuda">${esc(textoCada(r.cada))}. La siguiente ya está puesta y conserva sus avisos. Si el curso o la revisita ya no sigue, borra la fecha.</div>` : ''}</div>
       <div class="acciones"><button class="boton verde" type="submit">Completar</button><button class="boton sec" type="button" data-pred="volver|${esc(cid)}|${esc(volver)}">Cancelar</button></div>
     </form>`);
 }
@@ -3397,6 +3466,23 @@ function predOperacion(spec, el) {
       c.recordatorios = c.recordatorios.filter(x => x.id !== prEd.rid); cambioContacto(c);
       render(); toast('Recordatorio eliminado'); return predVolver(prEd.volver, c.id);
     }
+    case 'recSaltar': {
+      const c = contactoPorId(prEd.cid), r = c && c.recordatorios.find(x => x.id === prEd.rid), sig = r && r.cada && siguienteDe(r);
+      if (!sig) return;
+      r.fecha = sig; cambioContacto(c); render(); toast('Pasó al ' + fechaLarga(sig)); return predVolver(prEd.volver, c.id);
+    }
+    case 'aviso': {
+      const m = Number(a), i = prEd.avisos.indexOf(m);
+      if (i < 0) prEd.avisos.push(m); else prEd.avisos.splice(i, 1);
+      $('#prAvisos').innerHTML = chipsAvisos(); return;
+    }
+    case 'avisoOtro': {
+      const m = Math.round(Number($('#prAvisoN').value) * Number($('#prAvisoU').value));
+      if (!(m > 0)) return toast('Escribe cuánto tiempo antes');
+      if (m > PR_AVISO_MAX) return toast('El aviso puede ser de hasta 30 días antes');
+      if (!prEd.avisos.includes(m)) prEd.avisos.push(m);
+      $('#prAvisoN').value = ''; $('#prAvisos').innerHTML = chipsAvisos(); return;
+    }
     case 'completar': return abrirCompletar(a, b, c3);
     case 'visitaNueva': return abrirVisita(a, null);
     case 'visitaEditar': return abrirVisita(a, b);
@@ -3440,8 +3526,8 @@ function predGuardar(form) {
     c.mapaUrl = /^https?:\/\/\S+$/i.test(txt('mapaUrl')) ? txt('mapaUrl') : '';
     if (prEd.nuevo) {
       c.tipo = f.get('tipo') === 'curso' ? 'curso' : 'revisita';
-      if (c.tipo === 'curso') c.cursoDesde = hoyISO();
-      c.visitas.push({ id: nuevoId('v'), fecha: txt('primeraFecha') || hoyISO(), hora: txt('primeraHora'), nota: txt('primeraNota'), curso: c.tipo === 'curso', primera: true });
+      if (c.tipo === 'curso') c.cursoDesde = txt('cursoDesde') || hoyISO();
+      else c.visitas.push({ id: nuevoId('v'), fecha: txt('primeraFecha') || hoyISO(), hora: txt('primeraHora'), nota: txt('primeraNota'), curso: false, primera: true });
       DB.contactos.push(c);
     }
     cambioContacto(c); render(); toast('Guardado');
@@ -3454,14 +3540,23 @@ function predGuardar(form) {
     let r = prEd.rid && c.recordatorios.find(x => x.id === prEd.rid);
     if (!r) { r = { id: nuevoId('r') }; c.recordatorios.push(r); }
     r.fecha = txt('fecha'); r.hora = txt('hora'); r.nota = txt('nota');
+    r.avisos = prEd.avisos.slice().sort((x, y) => x - y);
+    const cada = serieDeForm(f);
+    if (cada) r.cada = cada; else delete r.cada;
     cambioContacto(c); render(); toast('Recordatorio guardado');
     return predVolver(prEd.volver, c.id);
   }
   if (id === 'formPrCompletar') {
     if (!txt('fecha')) return toast('Elige el día');
     c.visitas.push({ id: nuevoId('v'), fecha: txt('fecha'), hora: txt('hora'), nota: txt('nota'), curso: c.tipo === 'curso' });
+    const previo = c.recordatorios.find(x => x.id === prEd.rid) || {};
     c.recordatorios = c.recordatorios.filter(x => x.id !== prEd.rid);
-    if (txt('sigFecha')) c.recordatorios.push({ id: nuevoId('r'), fecha: txt('sigFecha'), hora: txt('sigHora'), nota: '' });
+    if (txt('sigFecha')) {
+      const sig = { id: nuevoId('r'), fecha: txt('sigFecha'), hora: txt('sigHora'), nota: previo.cada ? previo.nota || '' : '' };
+      if (previo.avisos) sig.avisos = previo.avisos;
+      if (previo.cada) sig.cada = previo.cada;
+      c.recordatorios.push(sig);
+    }
     cambioContacto(c); render(); toast('Visita registrada en el historial');
     return predVolver(prEd.volver, c.id);
   }
@@ -3482,27 +3577,33 @@ function predGuardar(form) {
   }
 }
 
-/* Aviso del sistema a la hora de una visita, mientras la app esté abierta o en segundo plano. Con la app cerrada avisa el correo (Avisos.gs). */
+/* Aviso del sistema de cada visita, con la anticipación elegida, mientras la app esté abierta o en segundo plano. Con la app cerrada avisan el correo y Telegram (Avisos.gs). */
 function revisarVisitas() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const ahora = new Date(), hoy = hoyISO();
+  const ahora = new Date(), hoy = hoyISO(), desde = sumarDias(hoy, -1), hasta = sumarDias(hoy, PR_AVISO_MAX / 1440 + 1);
   let cambio = false;
-  visitasPendientes().forEach(({ c, r }) => {
-    const k = 'visita:' + r.id;
-    if (r.fecha !== hoy || !r.hora || AVISADOS[k]) return;
-    const cuando = new Date(r.fecha + 'T' + r.hora);
-    if (cuando > ahora) return;
-    AVISADOS[k] = hoy; cambio = true;
-    if (ahora - cuando > 3 * 3600e3) return;
-    const cuerpo = r.hora + (c.direccion ? ' · ' + c.direccion : '');
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(reg => reg.showNotification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png', tag: k }));
-    } else new Notification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png' });
-  });
-  const viejo = sumarDias(hoy, -30);
+  contactosActivos().forEach(c => (c.recordatorios || []).forEach(r => {
+    if (!r.hora) return;
+    fechasDeVisita(r, desde, hasta).forEach(fecha => (r.avisos || [0]).forEach(m => {
+      const k = 'visita:' + r.id + ':' + fecha + ':' + m, cuando = new Date(new Date(fecha + 'T' + r.hora).getTime() - m * 60000);
+      if (AVISADOS[k] || cuando > ahora) return;
+      AVISADOS[k] = hoy; cambio = true;
+      if (ahora - cuando > 3 * 3600e3) return;
+      const cuerpo = (fecha === hoy ? 'Hoy' : fechaLarga(fecha)) + ', ' + r.hora + (c.direccion ? ' · ' + c.direccion : '');
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(reg => reg.showNotification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png', tag: k }));
+      } else new Notification('Visita: ' + c.nombre, { body: cuerpo, icon: 'icon-192.png' });
+    }));
+  }));
+  const viejo = sumarDias(hoy, -40);
   Object.keys(AVISADOS).forEach(k => { if (k.startsWith('visita:') && AVISADOS[k] < viejo) { delete AVISADOS[k]; cambio = true; } });
   if (cambio) { try { localStorage.setItem(LS_AVISADOS, JSON.stringify(AVISADOS)); } catch (e) {} }
 }
+/* Los formularios de Predicación muestran u ocultan campos según estos dos selectores */
+document.addEventListener('change', (e) => {
+  const f = e.target.form;
+  if (f && f.id.startsWith('formPr') && (e.target.name === 'tipo' || e.target.name === 'repite')) f.dataset[e.target.name] = e.target.value;
+});
 setInterval(revisarVisitas, 60000);
 
 /* ================= Sincronización ================= */
