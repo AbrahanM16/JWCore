@@ -723,7 +723,7 @@ const TIPOS = {
   intervalo: 'Cada cierto número de meses', relativa: 'Según una fecha clave',
   unica: 'Una sola vez', evento: 'Cuando ocurra', permanente: 'Responsabilidad permanente'
 };
-const VERSION_APP = '15 nov 2026, 16:40';
+const VERSION_APP = '15 nov 2026, 21:20';
 const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const COLORES_GRUPO = { 1: '#D9534F', 2: '#D49A2A', 3: '#2C7DA0', 4: '#7A5DC7' };
@@ -1203,7 +1203,7 @@ function vistaProximas() {
     if (m !== mes) { mes = m; const nombre = MESES[Number(m.slice(5)) - 1]; html += `<div class="titulo-mes">${nombre.charAt(0).toUpperCase() + nombre.slice(1)} de ${m.slice(0, 4)}</div>`; }
     html += tarjetaTarea(t, true);
   });
-  const herm = filtroProx.cargo ? [] : pendientesHermanos().filter(x => x.fecha >= hoyISO());
+  const herm = filtroProx.cargo ? [] : pendientesHermanos().filter(x => x.fecha >= hoyISO()).sort(ordenFechaRec);
   if (herm.length) html += `<h2 class="titulo-seccion">Hermanos<span class="cuenta">${herm.length}</span></h2>` + panelHermanos(herm);
   html += `<a class="abrir-seccion" href="#inicio">Volver al inicio</a>`;
   vista.innerHTML = html;
@@ -1318,16 +1318,16 @@ function renglonHermano(x, conNombre = true) {
 }
 const panelHermanos = (l, conNombre = true) => `<div class="panel panel-herm" style="padding:2px 12px">${l.map(x => renglonHermano(x, conNombre)).join('')}</div>`;
 let masAdelanteAbierto = false;
-/* Bloque de Inicio: primero las urgentes, luego las de prioridad media y al final las bajas; dentro de cada una, por fecha.
-   Lo que toca después de 7 días queda plegado en Más adelante. */
-const TIT_PRIO = { alta: 'Urgentes', media: 'Prioridad media', baja: 'Prioridad baja' };
+/* Bloque de Inicio: ordenado por fecha y hora, lo más pronto arriba (lo atrasado primero, lo que no tiene fecha al final).
+   La prioridad se ve en la etiqueta de cada renglón. Lo que toca después de 7 días queda plegado en Más adelante. */
+const ordenFechaRec = (a, b) => ((a.fecha || '9999') + a.hora).localeCompare((b.fecha || '9999') + b.hora) || ORDEN_PRIO[a.prio] - ORDEN_PRIO[b.prio];
 function bloqueHermanosInicio() {
-  const herm = pendientesHermanos();
+  const herm = pendientesHermanos().sort(ordenFechaRec);
   if (!herm.length) return '';
   const cerca = herm.filter(x => grupoCuando(x.fecha) !== 'despues'), despues = herm.filter(x => grupoCuando(x.fecha) === 'despues');
   let h = `<div class="sec-cab"><h2 class="titulo-seccion">Hermanos<span class="cuenta">${herm.length}</span></h2></div>`;
   if (!cerca.length) h += '<div class="vacio">Nada atrasado ni para esta semana.</div>';
-  ['alta', 'media', 'baja'].forEach(k => { const l = cerca.filter(x => x.prio === k); if (l.length) h += `<div class="grupo-lista">${TIT_PRIO[k]} (${l.length})</div>` + panelHermanos(l); });
+  if (cerca.length) h += panelHermanos(cerca);
   if (despues.length) h += `<details class="mas-adelante" data-mas ${masAdelanteAbierto ? 'open' : ''}><summary>Más adelante (${despues.length})</summary>${panelHermanos(despues)}</details>`;
   return h;
 }
