@@ -1,4 +1,4 @@
-const VERSION = 'jwcore-v45';
+const VERSION = 'jwcore-v47';
 const BASE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
